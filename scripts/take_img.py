@@ -5,14 +5,11 @@ from picamera import PiCamera
 def main():
     print("Booting camera")
     cam = PiCamera()
-    cam.resolution = (1920, 1080)
-    # cam.start_preview()
+    # cam.resolution = (1920, 1080)
+    cam.resolution = (2560, 1440)
+    cam.start_preview()
     sleep(2)
-    for i in range(100):
-        cam.capture(f'./data/test{i}.jpg')
-        sleep(0.5)
-    # print("Image Captured")
-
+    cam.capture(f'./data/test.jpg')
 
 if __name__ == '__main__':
     main()

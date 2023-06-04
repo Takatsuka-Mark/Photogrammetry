@@ -1,8 +1,8 @@
 from flask import Flask, Response
 from picamera import PiCamera
-from time import sleep
 from io import BytesIO
 from threading import Condition
+from time import sleep
 
 app = Flask(__name__)
 
@@ -41,7 +41,8 @@ def video_feed():
                     mimetype='multipart/x-mixed-replace; boundary=frame')
 
 if __name__ == '__main__':
-    with PiCamera(resolution='1920x1080', framerate=24) as camera:
+    with PiCamera(resolution='1920x1080', framerate=10) as camera:
+        sleep(2)
         global output
         output = StreamingOutput()
         camera.start_recording(output, format='mjpeg')
