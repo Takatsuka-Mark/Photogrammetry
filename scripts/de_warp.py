@@ -2,6 +2,7 @@ from argparse import ArgumentParser
 from cv2 import imread, imwrite
 from photogrammetry.image_processing.warping import generate_distortion_mat, apply_distortion_mat
 from os import path
+import time
 from datetime import datetime
 import json
 from socket import gethostname
@@ -39,7 +40,7 @@ def main():
     run_stats = {}
     run_stats['comments'] = args.stats_comments
 
-    start_time = datetime.now()
+    start_time = time.time()
     # TODO pass by args
     distortion_coefficients = [3e-4, 1e-7, 0, 0, 0]
     
@@ -51,10 +52,10 @@ def main():
         'filename': args.input_file
     }
     distortion_mat = generate_distortion_mat((img_height, img_width), distortion_coefficients)
-    run_stats['generate_distortion_mat_micros'] = (datetime.now() - start_time).microseconds
-    start_time = datetime.now()
+    run_stats['generate_distortion_mat_seconds'] = (time.time() - start_time)
+    start_time = time.time()
     de_warped = apply_distortion_mat(image, distortion_mat)
-    run_stats['apply_distortion_mat_micros'] = (datetime.now() - start_time).microseconds
+    run_stats['apply_distortion_mat_seconds'] = (time.time() - start_time)
     imwrite(outfile_path, de_warped)
     save_stats(stats_file_path, run_stats)
 
