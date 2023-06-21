@@ -1,12 +1,12 @@
 from math import sqrt, cos, sin
-from cv2 import Mat
+from cv2 import Mat, remap, INTER_LINEAR
 import numpy as np
 from typing import Tuple
 from photogrammetry.utils.files import create_dir_if_not_exists
 from os import path
 import time
 
-def get_distortion_mat(image_dim: Tuple[int, int], distortion_coefficients: list, cache = True):
+def get_distortion_mat(image_dim: Tuple[int, int], distortion_coefficients: list, cache = True, refresh_cache = False):
     if not cache:
         return generate_distortion_mat(image_dim, distortion_coefficients)
 
@@ -147,7 +147,28 @@ def generate_distortion_mat(image_dim: Tuple[int, int], distortion_coefficients:
     return distortion_mat
 
 def apply_distortion_mat(image: Mat, distortion_mat: Mat):
-    # Radial distrotion coefficients.
+    # Takes ~ 0.005 seconds for 1920x1080 with ints on M1.
+    # TODO Could save read this from cache instead.
+    transposed_dist_mat = distortion_mat.transpose((2, 0, 1))
+    map_y = transposed_dist_mat[0].astype(np.float32)
+    map_x = transposed_dist_mat[1].astype(np.float32)
+
+    # Takes ~ 0.0035 seconds for 1920x1080 with ints on M1
+    # TODO Need to experiment with interpolation
+    start = time.time()
+    new_img = remap(image, map_x, map_y, INTER_LINEAR)
+    print(f'Took {time.time() - start} to remap')
+    return new_img
+
+    
+def apply_distortion_mat_naive(image: Mat, distortion_mat: Mat):
+    """
+    My home built code to perform the same task as `cv2.remap` with no interpolation.
+    The logic is very boilerplate so I feel OK replacing it with the cv2 function and not building my
+    own faster version. Complex or interesting algorithms should be implemented by hand.
+
+    Takes ~1.5 seconds for a 1920x1080 image on M1
+    """
     height, width, _ = image.shape
     new_image = np.empty_like(image)
     for u in range(0, height):
