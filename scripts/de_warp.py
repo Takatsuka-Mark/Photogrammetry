@@ -1,6 +1,6 @@
 from argparse import ArgumentParser
 from cv2 import imread, imwrite
-from photogrammetry.image_processing.warping import generate_distortion_mat, apply_distortion_mat
+from photogrammetry.image_processing.warping import get_distortion_mat, apply_distortion_mat
 from os import path
 import time
 from datetime import datetime
@@ -24,10 +24,12 @@ def save_stats(stats_file_path, stats):
     stats['hostname'] = gethostname()   # Use to differentiate between PCs
     total_stats = []
     if path.exists(stats_file_path):
-        total_stats = json.load(open(stats_file_path, 'r'))
+        with open(stats_file_path, 'r') as fp:
+            total_stats = json.load(fp)
     total_stats.append(stats)
 
-    json.dump(total_stats, open(stats_file_path, 'w'))
+    with open(stats_file_path, 'w') as fp:
+        json.dump(total_stats, fp)
     print("Run stats saved in:", stats_file_path)
 
 def main():
@@ -51,8 +53,9 @@ def main():
         'channels': channels,
         'filename': args.input_file
     }
-    distortion_mat = generate_distortion_mat((img_height, img_width), distortion_coefficients)
+    distortion_mat = get_distortion_mat((img_height, img_width), distortion_coefficients)
     run_stats['generate_distortion_mat_seconds'] = (time.time() - start_time)
+    run_stats['generate_includes_caching'] = True
     start_time = time.time()
     de_warped = apply_distortion_mat(image, distortion_mat)
     run_stats['apply_distortion_mat_seconds'] = (time.time() - start_time)
