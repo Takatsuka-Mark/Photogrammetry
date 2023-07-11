@@ -15,6 +15,11 @@ def setup_and_parse_args():
     )
     parser.add_argument('input_file')
     parser.add_argument('stats_comments')
+    parser.add_argument(
+        '--refresh-cache',
+        action="store_true",
+        default=False
+    )
     return parser.parse_args()
 
 # def read_image(image_file: str):
@@ -53,7 +58,7 @@ def main():
         'channels': channels,
         'filename': args.input_file
     }
-    distortion_mat = get_distortion_mat((img_height, img_width), distortion_coefficients)
+    distortion_mat = get_distortion_mat((img_height, img_width), distortion_coefficients, refresh_cache=args.refresh_cache)
     run_stats['generate_distortion_mat_seconds'] = (time.time() - start_time)
     run_stats['generate_includes_caching'] = True
     start_time = time.time()

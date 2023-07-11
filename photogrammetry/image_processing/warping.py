@@ -15,10 +15,12 @@ def get_distortion_mat(image_dim: Tuple[int, int], distortion_coefficients: list
     create_dir_if_not_exists(cache_dir)
     
     file_path = path.join(cache_dir, filename)
-    if path.exists(file_path) and path.isfile(file_path):
+    if not refresh_cache and path.exists(file_path) and path.isfile(file_path):
         return np.load(file_path)
     
+    start = time.time()
     dist_mat = generate_distortion_mat(image_dim, distortion_coefficients)
+    print(f"Took {time.time() - start} seconds to generate the distortion mat")
     np.save(file_path, dist_mat)
     return dist_mat
 
@@ -139,11 +141,9 @@ def generate_distortion_mat(image_dim: Tuple[int, int], distortion_coefficients:
             # TODO determine if cast to int is OK
             new_v = int(y + y0)
             new_u = int(x + x0)
-            # print(new_u, new_v)
-            # if new_u > 1080
             distortion_mat[u, v] = (new_u, new_v)
-            # new_img[v, u] = image[new_v, new_u]
 
+    # NOTE that vectorize didn't offer much performance improvement sadly
     return distortion_mat
 
 def apply_distortion_mat(image: Mat, distortion_mat: Mat):
