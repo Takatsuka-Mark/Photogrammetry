@@ -1,5 +1,6 @@
 from cv2 import Mat, cvtColor, COLOR_BGR2GRAY, imwrite
 import numpy as np
+import time
 
 """
 https://homepages.inf.ed.ac.uk/rbf/CVonline/LOCAL_COPIES/AV1011/AV1FeaturefromAcceleratedSegmentTest.pdf
@@ -36,6 +37,8 @@ def fast_detection(image: Mat, threshold: int = 10):
     # contents like [(height, width), (height2, width2)]
     keypoints = []
 
+    time_acc = 0
+
     for x in range(0, img_height):
         for y in range(0, img_width):
             # x and y are coords of p
@@ -53,20 +56,15 @@ def fast_detection(image: Mat, threshold: int = 10):
 
             # intensity at p
             ip = bw_img[x, y]
+            now = time.time()
+            # Ring fetch taking ~1.6 seconds.
+            intensity_ring = fetch_bresenham_circle(bw_img, x, y, img_height, img_width, ip)
+            time_acc += (time.time() - now)
             
-            circle_intensity = []
-            for u_off, v_off in BRESENHAM_CIRCLE_3:
-                u = x + u_off
-                v = y + v_off
-
-                # out of bounds checks. Set to ip, (inside threshold so discounted)
-                if u < 0 or u >= img_height or v < 0 or v >= img_width:
-                    circle_intensity.append(ip)
-                else:
-                    circle_intensity.append(bw_img[u, v])
-            
-            if is_keypoint(ip, circle_intensity, threshold):
+            # Is keypoint taking ~0.925 seconds
+            if is_keypoint(ip, intensity_ring, threshold):
                 keypoints.append([x, y])
+    print(time_acc)
     return keypoints
 
 def in_threshold(principal_intensity, test_intensity, threshold: int):
@@ -75,6 +73,20 @@ def in_threshold(principal_intensity, test_intensity, threshold: int):
 def in_threshold_percentage(principal_intensity, test_intensity, threshold: float):
     thresh = principal_intensity * threshold
     return (test_intensity > (principal_intensity - thresh)) and (test_intensity < (principal_intensity + thresh))
+
+def fetch_bresenham_circle(bw_img: Mat, x, y, img_height, img_width, default_value):
+    intensity_ring = []
+    for u_off, v_off in BRESENHAM_CIRCLE_3:
+        u = x + u_off
+        v = y + v_off
+
+        # out of bounds checks. Set to ip, (inside threshold so discounted)
+        if u < 0 or u >= img_height or v < 0 or v >= img_width:
+            intensity_ring.append(default_value)
+        else:
+            intensity_ring.append(bw_img[u, v])
+    return intensity_ring
+    
 
 def is_keypoint(point_intensity: int, intensity_ring: list[int], threshold: int) -> bool:
     # Quick test to see if it's possible.
@@ -88,31 +100,21 @@ def is_keypoint(point_intensity: int, intensity_ring: list[int], threshold: int)
         # point rejected, not a corner
         return False
 
-    # TODO this is a super naive way to solve this. Just used for testing.
-    is_on_run = False
-    tests = 0
-    consecutive_outside_thresh = 0
-    total_in_thresh = 0
-    idx = -1
-    while tests < 32:
-        idx += 1
-        if idx == 16:
-            idx = 0
-        if tests >= 16 and not is_on_run:
-            # We've seen everything, aren't on a run so we must be done.
-            break
-        tests += 1
-        intensity = intensity_ring[idx]
+    is_beginning_consec = True
+    num_beginning_consec = 0
+    num_consec = 0
+    for intensity in intensity_ring:
         if in_threshold(point_intensity, intensity, threshold):
-            consecutive_outside_thresh = 0
-            is_on_run = False
-            total_in_thresh += 1
-            continue
+            # We've broken the streak
+            is_beginning_consec = False
+            num_consec = 0
         else:
-            is_on_run = True
-            consecutive_outside_thresh += 1
-        if consecutive_outside_thresh >= 12:
-            return True
-    if consecutive_outside_thresh >= 12:
-        return True
-    return False
+            num_consec += 1
+            if is_beginning_consec:
+                num_beginning_consec += 1
+            if num_consec >= 12:
+                return True
+    # We end with the number of consecutive outside the threshold at the end of the ring.
+    # So, adding on the beginning completes that "run" if it exists.
+    num_consec += num_beginning_consec
+    return num_consec >= 12
