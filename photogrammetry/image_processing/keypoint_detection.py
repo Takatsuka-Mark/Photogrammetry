@@ -27,7 +27,7 @@ BRESENHAM_CIRCLE_3 = np.array([
 ])
 
 
-def fast_detection(image: Mat, threshold: float = 0.2):
+def fast_detection(image: Mat, threshold: int = 10):
     img_height, img_width, _ = image.shape
 
     # TODO determine if BGR is correct color mapping.
@@ -40,9 +40,16 @@ def fast_detection(image: Mat, threshold: float = 0.2):
         for y in range(0, img_width):
             # x and y are coords of p
 
-            # Known key point
-            # x = 50
-            # y = 174
+            # x = 10
+            # y = 10
+
+            # Known key point top
+            # x = 35
+            # y = 202
+
+            # Known bottom key point
+            # x = 340
+            # y = 213
 
             # intensity at p
             ip = bw_img[x, y]
@@ -58,43 +65,54 @@ def fast_detection(image: Mat, threshold: float = 0.2):
                 else:
                     circle_intensity.append(bw_img[u, v])
             
-            # quick_test
-            quick_test_outside_thresh = 0
-            for circle_idx in [0, 4, 8, 12]:    # TODO make dynamic if making circle dynamic
-                if in_threshold(ip, circle_intensity[circle_idx], threshold):
-                    continue
-                quick_test_outside_thresh += 1
-            
-            if quick_test_outside_thresh < 3:
-                # point rejected, not a corner
-                continue
-
-            # TODO this is a super naive way to solve this. Just used for testing.
-            is_on_run = False
-            tests = 0
-            consecutive_outside_thresh = 0
-            total_in_thresh = 0
-            idx = 0
-            while tests < 32:
-                if tests >= 16 and not is_on_run:
-                    # We've seen everything, aren't on a run so we must be done.
-                    break
-                tests += 1
-                intensity = circle_intensity[idx]
-                if in_threshold(ip, intensity, threshold):
-                    consecutive_outside_thresh = 0
-                    is_on_run = False
-                    total_in_thresh += 1
-                    continue
-                else:
-                    is_on_run = True
-                    consecutive_outside_thresh += 1
-                if consecutive_outside_thresh >= 12:
-                    break
-            if consecutive_outside_thresh >= 12:
+            if is_keypoint(ip, circle_intensity, threshold):
                 keypoints.append([x, y])
     return keypoints
 
-def in_threshold(principal_intensity, test_intensity, threshold: float):
+def in_threshold(principal_intensity, test_intensity, threshold: int):
+    return (test_intensity > (principal_intensity - threshold)) and (test_intensity < (principal_intensity + threshold))
+
+def in_threshold_percentage(principal_intensity, test_intensity, threshold: float):
     thresh = principal_intensity * threshold
-    return (principal_intensity - thresh) <= test_intensity <= (principal_intensity + thresh)
+    return (test_intensity > (principal_intensity - thresh)) and (test_intensity < (principal_intensity + thresh))
+
+def is_keypoint(point_intensity: int, intensity_ring: list[int], threshold: int) -> bool:
+    # Quick test to see if it's possible.
+    quick_test_outside_thresh = 0
+    for circle_idx in [0, 4, 8, 12]:    # TODO make dynamic if making circle dynamic
+        if in_threshold(point_intensity, intensity_ring[circle_idx], threshold):
+            continue
+        quick_test_outside_thresh += 1
+
+    if quick_test_outside_thresh < 3:
+        # point rejected, not a corner
+        return False
+
+    # TODO this is a super naive way to solve this. Just used for testing.
+    is_on_run = False
+    tests = 0
+    consecutive_outside_thresh = 0
+    total_in_thresh = 0
+    idx = -1
+    while tests < 32:
+        idx += 1
+        if idx == 16:
+            idx = 0
+        if tests >= 16 and not is_on_run:
+            # We've seen everything, aren't on a run so we must be done.
+            break
+        tests += 1
+        intensity = intensity_ring[idx]
+        if in_threshold(point_intensity, intensity, threshold):
+            consecutive_outside_thresh = 0
+            is_on_run = False
+            total_in_thresh += 1
+            continue
+        else:
+            is_on_run = True
+            consecutive_outside_thresh += 1
+        if consecutive_outside_thresh >= 12:
+            return True
+    if consecutive_outside_thresh >= 12:
+        return True
+    return False
