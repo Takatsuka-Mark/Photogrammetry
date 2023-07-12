@@ -39,8 +39,9 @@ def fast_detection(image: Mat, threshold: int = 10):
 
     time_acc = 0
 
-    for x in range(0, img_height):
-        for y in range(0, img_width):
+    # TODO we are clamping the bounds here, but this will throw keypoints on edges out. Fix this (needs fixing when fetching bresenham circle)
+    for x in range(3, img_height-3):
+        for y in range(3, img_width-3):
             # x and y are coords of p
 
             # x = 10
@@ -75,16 +76,10 @@ def in_threshold_percentage(principal_intensity, test_intensity, threshold: floa
     return (test_intensity > (principal_intensity - thresh)) and (test_intensity < (principal_intensity + thresh))
 
 def fetch_bresenham_circle(bw_img: Mat, x, y, img_height, img_width, default_value):
-    intensity_ring = []
-    for u_off, v_off in BRESENHAM_CIRCLE_3:
-        u = x + u_off
-        v = y + v_off
-
-        # out of bounds checks. Set to ip, (inside threshold so discounted)
-        if u < 0 or u >= img_height or v < 0 or v >= img_width:
-            intensity_ring.append(default_value)
-        else:
-            intensity_ring.append(bw_img[u, v])
+    ring_points = BRESENHAM_CIRCLE_3 + [x, y]
+    ring_points = ring_points.transpose((1, 0))
+    # Going from [[x, y], [x2, y2], ...] to [[x, x2, ...], [y, y2, ...]]
+    intensity_ring = bw_img[ring_points[0], ring_points[1]]
     return intensity_ring
     
 
