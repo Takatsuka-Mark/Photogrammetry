@@ -26,6 +26,8 @@ BRESENHAM_CIRCLE_3 = np.array([
     [-2, -2],
     [-3, -1],
 ])
+# Going from [[x, y], [x2, y2], ...] to [[x, x2, ...], [y, y2, ...]]
+BRESENHAM_CIRCLE_3_TP = BRESENHAM_CIRCLE_3.transpose((1, 0))
 
 
 def fast_detection(image: Mat, threshold: int = 10):
@@ -57,14 +59,14 @@ def fast_detection(image: Mat, threshold: int = 10):
 
             # intensity at p
             ip = bw_img[x, y]
-            now = time.time()
-            # Ring fetch taking ~1.6 seconds.
-            intensity_ring = fetch_bresenham_circle(bw_img, x, y, img_height, img_width, ip)
-            time_acc += (time.time() - now)
+            # Ring fetch taking ~0.285 seconds.
+            intensity_ring = fetch_bresenham_circle(bw_img, x, y)
             
+            now = time.time()
             # Is keypoint taking ~0.925 seconds
             if is_keypoint(ip, intensity_ring, threshold):
                 keypoints.append([x, y])
+            time_acc += (time.time() - now)
     print(time_acc)
     return keypoints
 
@@ -75,15 +77,16 @@ def in_threshold_percentage(principal_intensity, test_intensity, threshold: floa
     thresh = principal_intensity * threshold
     return (test_intensity > (principal_intensity - thresh)) and (test_intensity < (principal_intensity + thresh))
 
-def fetch_bresenham_circle(bw_img: Mat, x, y, img_height, img_width, default_value):
-    ring_points = BRESENHAM_CIRCLE_3 + [x, y]
-    ring_points = ring_points.transpose((1, 0))
-    # Going from [[x, y], [x2, y2], ...] to [[x, x2, ...], [y, y2, ...]]
+# Note, all of these point groupings could be calculated when initialized. Then, when running on an image we just have to fetch points with bw_img[pts[0], pts[1]]
+def fetch_bresenham_circle(bw_img: Mat, x, y):
+    ring_points = BRESENHAM_CIRCLE_3_TP + np.array([[x], [y]])
     intensity_ring = bw_img[ring_points[0], ring_points[1]]
     return intensity_ring
-    
 
-def is_keypoint(point_intensity: int, intensity_ring: list[int], threshold: int) -> bool:
+# TODO vectorizing like this does work...
+# in_threshold_ring_func = np.vectorize(lambda intensity, ip, threshold: in_threshold(ip, intensity, threshold))
+
+def is_keypoint(point_intensity: int, intensity_ring: np.ndarray, threshold: int) -> bool:
     # Quick test to see if it's possible.
     quick_test_outside_thresh = 0
     for circle_idx in [0, 4, 8, 12]:    # TODO make dynamic if making circle dynamic
