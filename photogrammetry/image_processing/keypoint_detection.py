@@ -80,17 +80,17 @@ def in_threshold_percentage(principal_intensity, test_intensity, threshold: floa
 # Note, all of these point groupings could be calculated when initialized. Then, when running on an image we just have to fetch points with bw_img[pts[0], pts[1]]
 def fetch_bresenham_circle(bw_img: Mat, x, y):
     ring_points = BRESENHAM_CIRCLE_3_TP + np.array([[x], [y]])
-    intensity_ring = bw_img[ring_points[0], ring_points[1]]
-    return intensity_ring
+    return bw_img[ring_points[0], ring_points[1]]
 
 # TODO vectorizing like this does work...
 # in_threshold_ring_func = np.vectorize(lambda intensity, ip, threshold: in_threshold(ip, intensity, threshold))
 
-def is_keypoint(point_intensity: int, intensity_ring: np.ndarray, threshold: int) -> bool:
+def is_keypoint(principal_intensity: int, intensity_ring: np.ndarray, threshold: int) -> bool:
     # Quick test to see if it's possible.
+
     quick_test_outside_thresh = 0
     for circle_idx in [0, 4, 8, 12]:    # TODO make dynamic if making circle dynamic
-        if in_threshold(point_intensity, intensity_ring[circle_idx], threshold):
+        if in_threshold(principal_intensity, intensity_ring[circle_idx], threshold):
             continue
         quick_test_outside_thresh += 1
 
@@ -102,7 +102,7 @@ def is_keypoint(point_intensity: int, intensity_ring: np.ndarray, threshold: int
     num_beginning_consec = 0
     num_consec = 0
     for intensity in intensity_ring:
-        if in_threshold(point_intensity, intensity, threshold):
+        if in_threshold(principal_intensity, intensity, threshold):
             # We've broken the streak
             is_beginning_consec = False
             num_consec = 0
