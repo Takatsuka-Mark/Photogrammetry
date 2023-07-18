@@ -1,6 +1,8 @@
 from cv2 import Mat, cvtColor, COLOR_BGR2GRAY, imwrite
 import numpy as np
 import time
+import multiprocessing
+from functools import partial
 
 """
 https://homepages.inf.ed.ac.uk/rbf/CVonline/LOCAL_COPIES/AV1011/AV1FeaturefromAcceleratedSegmentTest.pdf
@@ -30,44 +32,17 @@ BRESENHAM_CIRCLE_3 = np.array([
 BRESENHAM_CIRCLE_3_TP = BRESENHAM_CIRCLE_3.transpose((1, 0))
 
 
-def fast_detection(image: Mat, threshold: int = 10):
-    img_height, img_width, _ = image.shape
-
-    # TODO determine if BGR is correct color mapping.
-    bw_img = cvtColor(image, COLOR_BGR2GRAY)
-
-    # contents like [(height, width), (height2, width2)]
+def process_row(x, img_width, bw_img, threshold):
     keypoints = []
-
-    time_acc = 0
-
-    # TODO we are clamping the bounds here, but this will throw keypoints on edges out. Fix this (needs fixing when fetching bresenham circle)
-    for x in range(3, img_height-3):
-        for y in range(3, img_width-3):
-            # x and y are coords of p
-
-            # x = 10
-            # y = 10
-
-            # Known key point top
-            # x = 35
-            # y = 202
-
-            # Known bottom key point
-            # x = 340
-            # y = 213
-
-            # intensity at p
-            ip = bw_img[x, y]
-            # Ring fetch taking ~0.285 seconds.
-            intensity_ring = fetch_bresenham_circle(bw_img, x, y)
-            
-            now = time.time()
-            # Is keypoint taking ~0.925 seconds
-            if is_keypoint(ip, intensity_ring, threshold):
-                keypoints.append([x, y])
-            time_acc += (time.time() - now)
-    print(time_acc)
+    for y in range(3, img_width-3):
+        # intensity at p
+        ip = bw_img[x, y]
+        # Ring fetch taking ~0.285 seconds.
+        intensity_ring = fetch_bresenham_circle(bw_img, x, y)
+        
+        # Is keypoint taking ~0.925 seconds
+        if is_keypoint(ip, intensity_ring, threshold):
+            keypoints.append([x, y])
     return keypoints
 
 def in_threshold(principal_intensity, test_intensity, threshold: int):
@@ -116,3 +91,30 @@ def is_keypoint(principal_intensity: int, intensity_ring: np.ndarray, threshold:
     # So, adding on the beginning completes that "run" if it exists.
     num_consec += num_beginning_consec
     return num_consec >= 12
+
+def fast_detection(image: Mat, threshold: int = 10):
+    img_height, img_width, _ = image.shape
+
+    # TODO determine if BGR is correct color mapping.
+    bw_img = cvtColor(image, COLOR_BGR2GRAY)
+
+    # contents like [(height, width), (height2, width2)]
+    keypoints = []
+
+    time_acc = 0
+
+    # TODO we are clamping the bounds here, but this will throw keypoints on edges out. Fix this (needs fixing when fetching bresenham circle)
+    # TTL time 1.17 seconds. Reduced to 0.1311 with multiprocessing.
+    now = time.time()
+    # Multiprocessing method. 1920x1080 ~ 1.81 seconds, 33886 keypoints
+    pool = multiprocessing.Pool()
+    outputs = pool.map(partial(process_row, img_width=img_width, bw_img=bw_img, threshold=threshold), range(3, img_height-3))
+    for output in outputs:
+        keypoints.extend(output)
+    
+    # Regular method. 1920x1080 ~ 15.9 seconds, 33886 keypoints
+    # for x in range(3, img_height-3):
+    #     keypoints.extend(process_row(x, img_width, bw_img, threshold))
+    time_acc += (time.time() - now)
+    print(time_acc)
+    return keypoints

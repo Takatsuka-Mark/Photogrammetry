@@ -1,18 +1,18 @@
 from argparse import ArgumentParser
 from cv2 import imread, Mat, imwrite
-from photogrammetry.image_processing.keypoint_detection import fast_detection, in_threshold
+from photogrammetry.image_processing.keypoint_detection import fast_detection
 
 def setup_and_parse_args():
     parser = ArgumentParser(
         prog='detect_features',
-        description='Detects keypoitns'
+        description='Detects keypoints'
     )
     parser.add_argument('input_file')
     return parser.parse_args()
 
 def run_fast_detection(image: Mat):
     keypoints = fast_detection(image)
-
+    print(len(keypoints), "keypoints found")
     height, width, _ = image.shape
 
     for x, y in keypoints:
