@@ -1,6 +1,6 @@
 from argparse import ArgumentParser
 from cv2 import imread, Mat, imwrite
-from photogrammetry.image_processing.keypoint_detection import fast_detection
+from photogrammetry.image_processing.keypoint_detection import FASTKeypointDetector
 
 def setup_and_parse_args():
     parser = ArgumentParser(
@@ -11,7 +11,11 @@ def setup_and_parse_args():
     return parser.parse_args()
 
 def run_fast_detection(image: Mat):
-    keypoints = fast_detection(image)
+    # keypoints = fast_detection(image)
+    img_height, img_width, _ = image.shape
+    fast_detector = FASTKeypointDetector(10, img_height, img_width)
+    keypoints = fast_detector.detect_points(image)
+
     print(len(keypoints), "keypoints found")
     height, width, _ = image.shape
 
