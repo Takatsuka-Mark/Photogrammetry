@@ -48,27 +48,35 @@ class FASTKeypointDetector:
         self._bw_img = cvtColor(image, COLOR_BGR2GRAY).astype(np.int16)
         # Convert into array like [[[lower, upper], [lower, upper], ...],[],...]
         # Packing bounds like this seems to have reduced from 5.7 seconds to 5.45
+        # Caching bounds in general also saves reduces from 6 to 2.7 seconds
         self._bounds = np.stack([self._bw_img - self.threshold, self._bw_img + self.threshold], axis=2)
+        # for each u, do mini_bres + u
 
-    def _in_threshold(self, principal_intensity: int, bounds):
+
+    def _in_threshold(self, ip_bounds, test_intensity):
         # TODO this could just take in x, y. Not lower, upper bound
-        return (principal_intensity > bounds[0]) and (principal_intensity < bounds[1])
+        return (test_intensity > ip_bounds[0]) and (test_intensity < ip_bounds[1])
 
     def _fetch_bresenham_circle(self, x, y):
         # Apparently unpacking an array is expensive.
         # So, changing this to `ring_xs, ring_ys = BRES_.. + np.array(...)` is about 7% slower
         # ring_points = BRESENHAM_CIRCLE_3_TP + np.array([[x], [y]])
         # return self._bounds[ring_points[0], ring_points[1]]
-        return self._bounds[BRESENHAM_CIRCLE_3_TP[0] + x, BRESENHAM_CIRCLE_3_TP[1] + y]
+        return self._bw_img[BRESENHAM_CIRCLE_3_TP[0] + x, BRESENHAM_CIRCLE_3_TP[1] + y]
 
-    def _is_keypoint_quick(self, principal_intensity: int, x, y) -> bool:
+    def _is_keypoint_quick(self, ip_bounds, x, y) -> bool:
         # TODO this should likely be combined with _is_keypoint. But, only required once the 4 caluclated quick points aren't thrown out
         quick_num_inside_thresh = 0
         for idx in range(4):
             # I would like to split the bound fetching into a separate method, but it's too slow.
 
+            # TODO HUGE POTENTIAL SAVINGS
+
+
+
+            # TODO perhaps we could speed this line up by pre-computing all MINI BRES x and y values. Here, we will repeat the same operations on x for every y where x is the same and visa versa. This is super inefficient.
             # Get the lower and upper bounds at the `idx` value in the mini bresenham circle, offset by x or y.
-            if not self._in_threshold(principal_intensity, self._bounds[MINI_BRESENHAM_CIRCLE_3_TP[0, idx] + x, MINI_BRESENHAM_CIRCLE_3_TP[1, idx] + y]):
+            if not self._in_threshold(ip_bounds, self._bw_img[MINI_BRESENHAM_CIRCLE_3_TP[0, idx] + x, MINI_BRESENHAM_CIRCLE_3_TP[1, idx] + y]):
                 continue
             
             if quick_num_inside_thresh > 0:
@@ -77,13 +85,13 @@ class FASTKeypointDetector:
             quick_num_inside_thresh += 1
         return True
 
-    def _is_keypoint(self, principal_intensity: int, bounds) -> bool:
+    def _is_keypoint(self, ip_bounds, bres_intensities) -> bool:
         is_beginning_consec = True
         num_beginning_consec = 0
         num_consec = 0
         num_fail = 0
-        for idx in range(len(bounds)):
-            if self._in_threshold(principal_intensity, bounds[idx]):
+        for idx in range(len(bres_intensities)):
+            if self._in_threshold(ip_bounds, bres_intensities[idx]):
                 # We've broken the streak
                 is_beginning_consec = False
                 num_consec = 0
@@ -111,15 +119,15 @@ class FASTKeypointDetector:
         keypoints = []
         for y in range(3, self.img_width-3):
             # intensity at p
-            ip = self._bw_img[x, y]
+            ip_bounds = self._bounds[x, y]
             # Ring fetch taking ~4.2 seconds.
             # bounds = self._fetch_bresenham_circle(x, y)
             now = time.time()
-            is_potential = self._is_keypoint_quick(ip, x, y)    # ~2.84
+            is_potential = self._is_keypoint_quick(ip_bounds, x, y)    # ~2.84
             self._time_acc += time.time() - now
             if is_potential:
-                bounds = self._fetch_bresenham_circle(x, y)
-                if self._is_keypoint(ip, bounds):
+                bres_circle = self._fetch_bresenham_circle(x, y)
+                if self._is_keypoint(ip_bounds, bres_circle):
                     keypoints.append([x, y])
 
             # Is keypoint taking ~1.18 seconds
@@ -141,16 +149,16 @@ class FASTKeypointDetector:
 
         # Multiprocessing method. 1920x1080 ~ 1.81 seconds, 33886 keypoints. ~1.5 after refactor? ~0.67 after first Bres re-work + chunk size modification.
         # 15pt star ~ 0.152 seconds, 128 keypoints
-        pool = multiprocessing.Pool()
-        num_rows_per_process = 50
-        outputs = pool.map(self._process_row, range(3, self.img_height-3), chunksize=num_rows_per_process)
-        for output in outputs:
-            keypoints.extend(output)
+        # pool = multiprocessing.Pool()
+        # num_rows_per_process = 50
+        # outputs = pool.map(self._process_row, range(3, self.img_height-3), chunksize=num_rows_per_process)
+        # for output in outputs:
+        #     keypoints.extend(output)
         
         # Regular method. 1920x1080 ~ 15.9 seconds, 33886 keypoints. ~6 after threshold refactor. ~2.54 after first Bresenham re-work
         # 15pt star ~ 1.158 seconds, 128 keypoints
-        # for x in range(3, self.img_height-3):
-        #     keypoints.extend(self._process_row(x))
+        for x in range(3, self.img_height-3):
+            keypoints.extend(self._process_row(x))
         print(time.time() - now)
         print("time_acc clocked", self._time_acc, "seconds")
         return keypoints
