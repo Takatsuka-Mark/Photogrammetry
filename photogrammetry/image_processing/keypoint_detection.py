@@ -50,21 +50,19 @@ class FASTKeypointDetector:
         # Packing bounds like this seems to have reduced from 5.7 seconds to 5.45
         # Caching bounds in general also saves reduces from 6 to 2.7 seconds
         self._bounds = np.stack([self._bw_img - self.threshold, self._bw_img + self.threshold], axis=2)
-        # for each u, do mini_bres + u
-
 
     def _in_threshold(self, ip_bounds, test_intensity):
         # TODO this could just take in x, y. Not lower, upper bound
         return (test_intensity > ip_bounds[0]) and (test_intensity < ip_bounds[1])
 
-    def _fetch_bresenham_circle(self, x, y):
+    def _fetch_bresenham_circle(self, u, v):
         # Apparently unpacking an array is expensive.
         # So, changing this to `ring_xs, ring_ys = BRES_.. + np.array(...)` is about 7% slower
         # ring_points = BRESENHAM_CIRCLE_3_TP + np.array([[x], [y]])
         # return self._bounds[ring_points[0], ring_points[1]]
-        return self._bw_img[BRESENHAM_CIRCLE_3_TP[0] + x, BRESENHAM_CIRCLE_3_TP[1] + y]
+        return self._bw_img[BRESENHAM_CIRCLE_3_TP[0] + u, BRESENHAM_CIRCLE_3_TP[1] + v]
 
-    def _is_keypoint_quick(self, ip_bounds, x, y) -> bool:
+    def _is_keypoint_quick(self, ip_bounds, u, v) -> bool:
         # TODO this should likely be combined with _is_keypoint. But, only required once the 4 caluclated quick points aren't thrown out
         quick_num_inside_thresh = 0
         for idx in range(4):
@@ -76,7 +74,7 @@ class FASTKeypointDetector:
 
             # TODO perhaps we could speed this line up by pre-computing all MINI BRES x and y values. Here, we will repeat the same operations on x for every y where x is the same and visa versa. This is super inefficient.
             # Get the lower and upper bounds at the `idx` value in the mini bresenham circle, offset by x or y.
-            if not self._in_threshold(ip_bounds, self._bw_img[MINI_BRESENHAM_CIRCLE_3_TP[0, idx] + x, MINI_BRESENHAM_CIRCLE_3_TP[1, idx] + y]):
+            if not self._in_threshold(ip_bounds, self._bw_img[MINI_BRESENHAM_CIRCLE_3_TP[0, idx] + u, MINI_BRESENHAM_CIRCLE_3_TP[1, idx] + v]):
                 continue
             
             if quick_num_inside_thresh > 0:
@@ -109,7 +107,7 @@ class FASTKeypointDetector:
         num_consec += num_beginning_consec
         return num_consec >= 12
 
-    def _process_row(self, x):
+    def _process_row(self, u):
         """
         TODO EFFEICIENCY IMPROVEMENT <<<
         TODO, once fetching the mini bresenham is fast enough - Instead, iterate fetching mini bres' 4x
@@ -117,18 +115,18 @@ class FASTKeypointDetector:
         If all pass, then we have to check for consecutives. But, we'll already have the proper info.
         """
         keypoints = []
-        for y in range(3, self.img_width-3):
+        for v in range(3, self.img_width-3):
             # intensity at p
-            ip_bounds = self._bounds[x, y]
+            ip_bounds = self._bounds[u, v]
             # Ring fetch taking ~4.2 seconds.
             # bounds = self._fetch_bresenham_circle(x, y)
             now = time.time()
-            is_potential = self._is_keypoint_quick(ip_bounds, x, y)    # ~2.84
+            is_potential = self._is_keypoint_quick(ip_bounds, u, v)    # ~2.84
             self._time_acc += time.time() - now
             if is_potential:
-                bres_circle = self._fetch_bresenham_circle(x, y)
+                bres_circle = self._fetch_bresenham_circle(u, v)
                 if self._is_keypoint(ip_bounds, bres_circle):
-                    keypoints.append([x, y])
+                    keypoints.append([u, v])
 
             # Is keypoint taking ~1.18 seconds
         return keypoints
@@ -157,8 +155,8 @@ class FASTKeypointDetector:
         
         # Regular method. 1920x1080 ~ 15.9 seconds, 33886 keypoints. ~6 after threshold refactor. ~2.54 after first Bresenham re-work
         # 15pt star ~ 1.158 seconds, 128 keypoints
-        for x in range(3, self.img_height-3):
-            keypoints.extend(self._process_row(x))
+        for u in range(3, self.img_height-3):
+            keypoints.extend(self._process_row(u))
         print(time.time() - now)
         print("time_acc clocked", self._time_acc, "seconds")
         return keypoints
