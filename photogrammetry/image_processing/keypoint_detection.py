@@ -2,7 +2,7 @@ from cv2 import Mat, cvtColor, COLOR_BGR2GRAY
 import numpy as np
 import time
 import multiprocessing
-
+from dataclasses import dataclass
 """
 https://homepages.inf.ed.ac.uk/rbf/CVonline/LOCAL_COPIES/AV1011/AV1FeaturefromAcceleratedSegmentTest.pdf
 """
@@ -31,6 +31,14 @@ MINI_BRESENHAM_CIRCLE_3 = BRESENHAM_CIRCLE_3[[0, 4, 8, 12]]
 # Going from [[x, y], [x2, y2], ...] to [[x, x2, ...], [y, y2, ...]]
 BRESENHAM_CIRCLE_3_TP = BRESENHAM_CIRCLE_3.transpose((1, 0))
 MINI_BRESENHAM_CIRCLE_3_TP = MINI_BRESENHAM_CIRCLE_3.transpose((1, 0))
+
+
+@dataclass
+class KeyPoint:
+    coord: np.ndarray
+    moment: float
+    descriptor: int
+
 
 class FASTKeypointDetector:
     def __init__(self, threshold, img_height, img_width) -> None:
@@ -140,7 +148,7 @@ class FASTKeypointDetector:
     def detect_points(self, image: Mat):
         # TODO we are excluding the 3 pixel border because it requires extra thought. Determine if this is OK
         # contents like [(height, width), (height2, width2)]
-        keypoints = []
+        raw_keypoints = []
         now = time.time()
 
         self._config_caches(image)
@@ -156,11 +164,12 @@ class FASTKeypointDetector:
         # Regular method. 1920x1080 ~ 15.9 seconds, 33886 keypoints. ~6 after threshold refactor. ~2.54 after first Bresenham re-work
         # 15pt star ~ 1.158 seconds, 128 keypoints
         for u in range(3, self.img_height-3):
-            keypoints.extend(self._process_row(u))
+            raw_keypoints.extend(self._process_row(u))
         print(time.time() - now)
         print("time_acc clocked", self._time_acc, "seconds")
-        for keypoint in keypoints:
-            print(keypoint, self._direction(keypoint[0], keypoint[1]))
+        keypoints = []
+        for keypoint in raw_keypoints:
+            keypoints.append(KeyPoint(keypoint, self._direction(keypoint[0], keypoint[1]), self._brief_descriptor(keypoint[0], keypoint[1])))
         return keypoints
 
     def _moment(self, u, v, p, q):
@@ -174,6 +183,20 @@ class FASTKeypointDetector:
     def _direction(self, u, v):
         return np.arctan2(self._moment(u, v, 0, 1), self._moment(u, v, 1, 0))
 
-    def _brief_descriptor(self, u, v):
+    def _brief_descriptor(self, u, v) -> int:
+        # TODO would be useful to take a smoothed 9x9 patch and then compute the descriptor over this
+        pairs = self._gaussian_pair_selector(u, v, 10, num_pairs=5)  # TODO DETERMINE THE STDEV TO USE
         des = 0
-        pass
+        for idx, pair in enumerate(pairs):
+            p1 = self._bw_img[pair[0][0], pair[0][1]]
+            p2 = self._bw_img[pair[1][0], pair[1][1]]
+            if p1 < p2:
+                des += (2**idx)
+        return des
+
+    def _gaussian_pair_selector(self, u, v, stdev, num_pairs=128):
+        # TODO there are better algorithms for pair selection. See https://www.cs.ubc.ca/~lowe/525/papers/calonder_eccv10.pdf
+        pairs = np.zeros((num_pairs, 2, 2), dtype=np.int64)    # TODO does this really need to be 64?
+        for idx in range(num_pairs):
+            pairs[idx] = [np.rint(np.random.normal([u, v], stdev)).astype(np.int64), np.rint(np.random.normal([u, v], stdev)).astype(np.int64)]
+        return pairs

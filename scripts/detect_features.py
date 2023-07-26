@@ -19,7 +19,9 @@ def run_fast_detection(image: Mat):
     print(len(keypoints), "keypoints found")
     height, width, _ = image.shape
 
-    for x, y in keypoints:
+    for keypoint in keypoints:
+        x = keypoint.coord[0]
+        y = keypoint.coord[1]
         # TODO need to clamp this inside of frame
         for u in range(x-2, x+3):
             for v in range(y-2, y+3):
