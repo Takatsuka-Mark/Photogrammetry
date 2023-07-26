@@ -159,4 +159,21 @@ class FASTKeypointDetector:
             keypoints.extend(self._process_row(u))
         print(time.time() - now)
         print("time_acc clocked", self._time_acc, "seconds")
+        for keypoint in keypoints:
+            print(keypoint, self._direction(keypoint[0], keypoint[1]))
         return keypoints
+
+    def _moment(self, u, v, p, q):
+        # Let u, v be the height and width.
+        # https://iopscience.iop.org/article/10.1088/1742-6596/1693/1/012068/pdf
+        acc = 0
+        for x, y in BRESENHAM_CIRCLE_3:
+            acc += (x ** p) * (y ** q) * self._bw_img[x + u, y + v]     # TODO determine if x, y or y, x. Not sure if it matters
+        return acc
+    
+    def _direction(self, u, v):
+        return np.arctan2(self._moment(u, v, 0, 1), self._moment(u, v, 1, 0))
+
+    def _brief_descriptor(self, u, v):
+        des = 0
+        pass
