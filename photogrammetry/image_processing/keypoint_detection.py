@@ -53,6 +53,7 @@ class FASTKeypointDetector:
         self._time_acc = 0
 
     def _config_caches(self, image: Mat):
+        self._time_acc = 0
         self._bw_img = cvtColor(image, COLOR_BGR2GRAY).astype(np.int16)
         # Convert into array like [[[lower, upper], [lower, upper], ...],[],...]
         # Packing bounds like this seems to have reduced from 5.7 seconds to 5.45
@@ -185,7 +186,7 @@ class FASTKeypointDetector:
 
     def _brief_descriptor(self, u, v) -> int:
         # TODO would be useful to take a smoothed 9x9 patch and then compute the descriptor over this
-        pairs = self._gaussian_pair_selector(u, v, 10, num_pairs=5)  # TODO DETERMINE THE STDEV TO USE
+        pairs = self._gaussian_pair_selector(u, v, 50)  # TODO DETERMINE THE STDEV TO USE
         des = 0
         for idx, pair in enumerate(pairs):
             p1 = self._bw_img[pair[0][0], pair[0][1]]
@@ -194,7 +195,7 @@ class FASTKeypointDetector:
                 des += (2**idx)
         return des
 
-    def _gaussian_pair_selector(self, u, v, stdev, num_pairs=128):
+    def _gaussian_pair_selector(self, u, v, stdev, num_pairs=256):
         # TODO there are better algorithms for pair selection. See https://www.cs.ubc.ca/~lowe/525/papers/calonder_eccv10.pdf
         pairs = np.zeros((num_pairs, 2, 2), dtype=np.int64)    # TODO does this really need to be 64?
         for idx in range(num_pairs):
