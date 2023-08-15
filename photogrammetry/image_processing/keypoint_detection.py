@@ -51,6 +51,7 @@ class FASTKeypointDetector:
         self._bounds = np.empty(0)
 
         self._time_acc = 0
+        self._gaussian_pairs = generate_gaussian_pairs(stdev=50)
 
     def _config_caches(self, image: Mat):
         self._time_acc = 0
@@ -177,6 +178,7 @@ class FASTKeypointDetector:
         # Let u, v be the height and width.
         # https://iopscience.iop.org/article/10.1088/1742-6596/1693/1/012068/pdf
         acc = 0
+
         for x, y in BRESENHAM_CIRCLE_3:
             acc += (x ** p) * (y ** q) * self._bw_img[x + u, y + v]     # TODO determine if x, y or y, x. Not sure if it matters
         return acc
@@ -186,18 +188,34 @@ class FASTKeypointDetector:
 
     def _brief_descriptor(self, u, v) -> int:
         # TODO would be useful to take a smoothed 9x9 patch and then compute the descriptor over this
-        pairs = self._gaussian_pair_selector(u, v, 50)  # TODO DETERMINE THE STDEV TO USE
+        # pairs = self._gaussian_pair_selector(u, v, 50)  # TODO DETERMINE THE STDEV TO USE
+        pairs = self._gaussian_pairs
         des = 0
         for idx, pair in enumerate(pairs):
-            p1 = self._bw_img[pair[0][0], pair[0][1]]
-            p2 = self._bw_img[pair[1][0], pair[1][1]]
+            if (
+                (0 > pair[0][0] + u or pair[0][0] + u >= self.img_height) or
+                (0 > pair[1][0] + u or pair[1][0] + u >= self.img_height) or
+                (0 > pair[0][1] + v or pair[0][1] + v >= self.img_width) or
+                (0 > pair[1][1] + v or pair[1][1] + v >= self.img_width)
+            ):
+                # TODO determine how to handle pairs outside of the img.
+                continue
+            p1 = self._bw_img[pair[0][0] + u, pair[0][1] + v]
+            p2 = self._bw_img[pair[1][0] + u, pair[1][1] + v]
             if p1 < p2:
                 des += (2**idx)
         return des
 
     def _gaussian_pair_selector(self, u, v, stdev, num_pairs=256):
         # TODO there are better algorithms for pair selection. See https://www.cs.ubc.ca/~lowe/525/papers/calonder_eccv10.pdf
-        pairs = np.zeros((num_pairs, 2, 2), dtype=np.int64)    # TODO does this really need to be 64?
+        pairs = np.zeros((num_pairs, 2, 2), dtype=np.int64)
         for idx in range(num_pairs):
             pairs[idx] = [np.rint(np.random.normal([u, v], stdev)).astype(np.int64), np.rint(np.random.normal([u, v], stdev)).astype(np.int64)]
         return pairs
+
+def generate_gaussian_pairs(stdev, num_pairs=256):
+    # TODO there are better algorithms for pair selection. See https://www.cs.ubc.ca/~lowe/525/papers/calonder_eccv10.pdf
+    pairs = np.zeros((num_pairs, 2, 2), dtype=np.int64)    # TODO does this really need to be 64?
+    for idx in range(num_pairs):
+        pairs[idx] = [np.rint(np.random.normal([0, 0], stdev)).astype(np.int64), np.rint(np.random.normal([0, 0], stdev)).astype(np.int64)]
+    return pairs
