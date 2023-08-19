@@ -1,22 +1,29 @@
 from photogrammetry.image_processing.keypoint_detection import FASTKeypointDetector
 from photogrammetry.image_processing.keypoint_matching import match_keypoints
+from photogrammetry.storage.image_db import ImageDB
 from photogrammetry.utils.draw import draw_point
 from cv2 import imread, imwrite, circle, line, putText, FONT_HERSHEY_SIMPLEX
 import pickle
 import math
 import numpy as np
 
-# image1 = imread('./data/feature_matching_test/15pt_star.png')
-# image2 = imread('./data/feature_matching_test/15pt_star_shifted_150.png')
-image1 = imread('./data/feature_matching_test/lego_space_1_from_left.jpg')
-image2 = imread('./data/feature_matching_test/lego_space_1_from_right.jpg')
+image1 = imread('./data/feature_matching_test/15pt_star.png')
+image2 = imread('./data/feature_matching_test/15pt_star_shifted_150.png')
+# image1 = imread('./data/feature_matching_test/lego_space_1_from_left.jpg')
+# image2 = imread('./data/feature_matching_test/lego_space_1_from_right.jpg')
+
+
 
 img_height, img_width, _ = image1.shape
-fast_detector = FASTKeypointDetector(50, img_height, img_width)
+image_db = ImageDB(img_height, img_width)
+image_1_id = image_db.add_image(image1)
+image_2_id = image_db.add_image(image2)
+
+fast_detector = FASTKeypointDetector(50, image_db)
 
 # Saving keypoints
-img1_keypoints = fast_detector.detect_points(image1)
-img2_keypoints = fast_detector.detect_points(image2)
+img1_keypoints = fast_detector.detect_points(image_1_id)
+img2_keypoints = fast_detector.detect_points(image_2_id)
 # with open('./data/feature_matching_test/lego_space_1_from_left_keypoints.dat', 'wb') as f:
 #     pickle.dump(img1_keypoints, f)
 # with open('./data/feature_matching_test/lego_space_1_from_right_keypoints.dat', 'wb') as f:
@@ -79,8 +86,8 @@ for key1_idx in range(0, len(img1_keypoints), 3):
 # circle(image_combined, img1_keypoints[best_key1].coord[::-1], 20, (0, 255, 0), -1)
 # circle(image_combined, [i + j for i, j in zip(img2_keypoints[best_key2].coord, [img_height, img_width])][::-1], 20, (0, 0, 255), -1)
 
-imwrite('./data/feature_matching_test/lego_space_1_combined.jpg', image_combined)
-# imwrite('./data/feature_matching_test/15pt_star_combined.jpg', image_combined)
+imwrite('./data/feature_matching_test/15pt_star_combined.jpg', image_combined)
+# imwrite('./data/feature_matching_test/lego_space_1_combined.jpg', image_combined)
 
 # circle(image1, img1_keypoints[best_key1].coord[::-1], 20, (0, 255, 0), -1)
 # circle(image2, img2_keypoints[best_key2].coord[::-1], 20, (0, 255, 0), -1)
