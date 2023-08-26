@@ -1,8 +1,5 @@
-from cv2 import Mat, cvtColor, COLOR_BGR2GRAY
 import numpy as np
 import time
-import multiprocessing
-from dataclasses import dataclass
 from photogrammetry.models.keypoint import KeyPoint, generate_gaussian_pairs
 from photogrammetry.storage.image_db import ImageDB
 """
@@ -37,6 +34,9 @@ MINI_BRESENHAM_CIRCLE_3_TP = MINI_BRESENHAM_CIRCLE_3.transpose((1, 0))
 
 class FASTKeypointDetector:
     def __init__(self, threshold, image_db: ImageDB) -> None:
+        """
+        :param threshold: The distance between the test point's intensity for it to be considered a notable point.
+        """
         self.threshold = threshold
         self._image_db = image_db
         self.img_height, self.img_width = self._image_db.dim
@@ -131,7 +131,7 @@ class FASTKeypointDetector:
             if is_potential:
                 bres_circle = self._fetch_bresenham_circle(u, v)
                 if self._is_keypoint(ip_bounds, bres_circle):
-                    keypoints.append([u, v])
+                    keypoints.append(np.array([u, v]))    # TODO added np.array. Find performance impact.
 
             # Is keypoint taking ~1.18 seconds
         return keypoints

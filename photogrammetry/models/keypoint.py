@@ -12,6 +12,11 @@ class KeyPoint:
         self._gaussian_pairs = gaussian_pairs
         self._image_db = image_db
     
+    @classmethod
+    def from_reference(cls, keypoint):
+        # TODO this needs implementing.
+        return 
+
     @property
     def coord(self):
         return self._coord
