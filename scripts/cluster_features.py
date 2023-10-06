@@ -37,7 +37,7 @@ def main():
     input_filename = args.input_file
     image = imread(input_filename)
     raw_keypoint_cache_info = KeypointCacheInfo(
-        img_hash=args.input_file,   # TODO this is a hack...
+        img_hash=args.input_file,   # TODO this is a hack...    Instead, the image DB shoudl return a UUID or index. Then, we can use that as the hash of the image.
         is_clustered=False,
         fast_detection_threshold=args.detection_threshold
     )
@@ -52,7 +52,8 @@ def main():
     print(f"Found {len(keypoints)} keypoints")
 
     start=time()
-    clustered_keypoints = cluster_fast_detection(keypoints[:500], args.max_merge_dist)
+    # Taking ~11 seconds for 2175 points.
+    clustered_keypoints = cluster_fast_detection(keypoints, args.max_merge_dist)
     print(f"Clustered to {len(clustered_keypoints)} keypoints in {time() - start}")
     draw_keypoints(image, keypoints, (0, 0, 255))
     draw_keypoints(image, clustered_keypoints, (0, 255, 0))
@@ -61,7 +62,10 @@ def main():
 
 if __name__ == '__main__':
     main()
+"""
 
+
+"""
 
 """
 TODO

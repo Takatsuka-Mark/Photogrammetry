@@ -22,7 +22,7 @@ class KeypointCacheInfo:
 # TODO make a version of this that can take a general keypoint detector / clusterer
 # and decorate the function S.T. any calls to "get_keypoints" will be cached.
 class KeypointCache:
-    def __init__(self, data_dir="./data/keypoint_cache") -> None:
+    def __init__(self, data_dir="./data/tmp/keypoint_cache") -> None:
         self.base_dir_path = Path(data_dir)
         self.index_path = self.base_dir_path.joinpath('index.json')
         self._create_cache_dir_if_not_exists()
