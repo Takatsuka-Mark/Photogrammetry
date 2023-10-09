@@ -2,6 +2,7 @@ import numpy as np
 import time
 from photogrammetry.models.keypoint import KeyPoint, generate_gaussian_pairs
 from photogrammetry.storage.image_db import ImageDB
+import multiprocessing
 """
 https://homepages.inf.ed.ac.uk/rbf/CVonline/LOCAL_COPIES/AV1011/AV1FeaturefromAcceleratedSegmentTest.pdf
 """
@@ -46,6 +47,7 @@ class FASTKeypointDetector:
         self._bounds = np.empty(0)
 
         self._time_acc = 0
+        # TODO stdev as param.
         self._gaussian_pairs = generate_gaussian_pairs(stdev=50)
 
     def _config_caches(self, image_id):
@@ -150,18 +152,20 @@ class FASTKeypointDetector:
 
         self._config_caches(image_id)
 
+
+        # TODO implement two different classes for multiprocessing & not
         # Multiprocessing method. 1920x1080 ~ 1.81 seconds, 33886 keypoints. ~1.5 after refactor? ~0.67 after first Bres re-work + chunk size modification.
         # 15pt star ~ 0.152 seconds, 128 keypoints
-        # pool = multiprocessing.Pool()
-        # num_rows_per_process = 50
-        # outputs = pool.map(self._process_row, range(3, self.img_height-3), chunksize=num_rows_per_process)
-        # for output in outputs:
-        #     keypoints.extend(output)
+        pool = multiprocessing.Pool()
+        num_rows_per_process = 50
+        outputs = pool.map(self._process_row, range(3, self.img_height-3), chunksize=num_rows_per_process)
+        for output in outputs:
+            raw_keypoints.extend(output)
         
         # Regular method. 1920x1080 ~ 15.9 seconds, 33886 keypoints. ~6 after threshold refactor. ~2.54 after first Bresenham re-work
         # 15pt star ~ 1.158 seconds, 128 keypoints
-        for u in range(3, self.img_height-3):
-            raw_keypoints.extend(self._process_row(u))
+        # for u in range(3, self.img_height-3):
+        #     raw_keypoints.extend(self._process_row(u))
         print(time.time() - now)
         print("time_acc clocked", self._time_acc, "seconds")
         keypoints = []

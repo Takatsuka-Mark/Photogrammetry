@@ -2,7 +2,7 @@ from argparse import ArgumentParser
 from cv2 import circle, imwrite, imread
 from photogrammetry.storage.image_db import ImageDB
 from photogrammetry.image_processing.keypoint_detection import FASTKeypointDetector
-from photogrammetry.clustering.hierarchical import HierarchicalClustering
+from photogrammetry.clustering.hierarchical import HierarchicalClustering, ChunkedHierarchicalClustering, ChunkedHierarchicalClusteringMultithreaded
 from time import time
 from photogrammetry.storage.keypoint_cache import KeypointCache, KeypointCacheInfo
 
@@ -21,7 +21,6 @@ def draw_keypoints(img, keypoints, color):
         circle(img, keypoint.coord[::-1], 5, color, -1)
 
 def run_fast_detection(image_db: ImageDB, image_id: int, detection_threshold: int):
-    # keypoints = fast_detection(image)
     fast_detector = FASTKeypointDetector(detection_threshold, image_db)
     keypoints = fast_detector.detect_points(image_id)
     return keypoints
@@ -30,6 +29,13 @@ def cluster_fast_detection(keypoints, max_merge_dist: int):
     hc = HierarchicalClustering(keypoints, max_merge_distance=max_merge_dist)
     clustered_keypoints = hc.run_clustering()
     return clustered_keypoints
+
+def chunked_cluster_fast_detection(keypoints, image_dim, max_merge_dist: int):
+    chunked_hc = ChunkedHierarchicalClusteringMultithreaded(
+        image_dim, keypoints, max_merge_dist=max_merge_dist
+    )
+    chunked_keypoints = chunked_hc.run_clustering()
+    return chunked_keypoints
 
 def main():
     cache = KeypointCache()
@@ -53,7 +59,11 @@ def main():
 
     start=time()
     # Taking ~11 seconds for 2175 points.
-    clustered_keypoints = cluster_fast_detection(keypoints, args.max_merge_dist)
+    # Unplugged, ~12.2s, 2175 -> 279 keypoints.
+    # clustered_keypoints = cluster_fast_detection(keypoints, args.max_merge_dist)
+
+    # Unplugged, 4x4, ~3.71s, 2175 -> 280
+    clustered_keypoints = chunked_cluster_fast_detection(keypoints, (height, width), args.max_merge_dist)
     print(f"Clustered to {len(clustered_keypoints)} keypoints in {time() - start}")
     draw_keypoints(image, keypoints, (0, 0, 255))
     draw_keypoints(image, clustered_keypoints, (0, 255, 0))
@@ -62,23 +72,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-"""
-
-
-"""
-
-"""
-TODO
-1. Create cache of detected keypoints for images. This can be speicifc to the
-    scripts, it mostly just sucks that each run we have to re-compute the
-    keypoints. Need to make sure it's aware of the parameters passed to the
-    program, especially those that influence the detected keypoints
-2. Greatly improve the efficency of the hierarchical clustering...
-    Right now it is taking much too long. Ex: 2175 keypoints detected on lego_space_1_from_left
-    (detection takes 9.66s) clustering with a max_merge_distance of 25 is taking: 999seconds
-
-
-State: at 11:50
-If taking the first 500 keypoints, it takes 
-
-"""

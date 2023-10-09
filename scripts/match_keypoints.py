@@ -4,94 +4,134 @@ from cv2 import FONT_HERSHEY_SIMPLEX, circle, imread, imwrite, line, putText
 from photogrammetry.image_processing.keypoint_detection import \
     FASTKeypointDetector
 from photogrammetry.image_processing.keypoint_matching import match_keypoints
+from photogrammetry.clustering.hierarchical import HierarchicalClustering, ChunkedHierarchicalClusteringMultithreaded
 from photogrammetry.storage.image_db import ImageDB
+from photogrammetry.storage.keypoint_cache import KeypointCache, KeypointCacheInfo
 from photogrammetry.utils.draw import draw_point
-
-image1 = imread('./data/feature_matching_test/15pt_star.png')
-image2 = imread('./data/feature_matching_test/15pt_star_shifted_150.png')
-# image1 = imread('./data/feature_matching_test/lego_space_1_from_left.jpg')
-# image2 = imread('./data/feature_matching_test/lego_space_1_from_right.jpg')
+from argparse import ArgumentParser
 
 
+def setup_and_parse_args():
+    parser = ArgumentParser(
+        prog='detect_features',
+        description='Detects keypoints'
+    )
+    parser.add_argument('input_file_1')
+    parser.add_argument('input_file_2')
+    parser.add_argument('--detection-threshold', default=50, type=int, required=False)
+    parser.add_argument('--max-merge-dist', default=25, type=int, required=False)
+    parser.add_argument('--match-threshold', default=50, type=int, required=False)
+    return parser.parse_args()
 
-img_height, img_width, _ = image1.shape
-image_db = ImageDB(img_height, img_width)
-image_1_id = image_db.add_image(image1)
-image_2_id = image_db.add_image(image2)
+def draw_keypoints(img, keypoints, color):
+    for keypoint in keypoints:
+        circle(img, keypoint.coord[::-1], 5, color, -1)
 
-fast_detector = FASTKeypointDetector(50, image_db)
-# import pickle
-# Saving keypoints
-img1_keypoints = fast_detector.detect_points(image_1_id)
-img2_keypoints = fast_detector.detect_points(image_2_id)
-with open('./data/feature_matching_test/lego_space_1_from_left_keypoints.dat', 'wb') as f:
-    pickle.dump(img1_keypoints, f)
-# with open('./data/feature_matching_test/lego_space_1_from_right_keypoints.dat', 'wb') as f:
-#     pickle.dump(img2_keypoints, f)
+def run_fast_detection(image_db: ImageDB, image_id: int, detection_threshold: int):
+    fast_detector = FASTKeypointDetector(detection_threshold, image_db)
+    keypoints = fast_detector.detect_points(image_id)
+    return keypoints
 
-# Loading keypoints
-# with open('./data/feature_matching_test/lego_space_1_from_left_keypoints.dat', 'rb') as f:
-#     img1_keypoints = pickle.load(f)
-# with open('./data/feature_matching_test/lego_space_1_from_right_keypoints.dat', 'rb') as f:
-#     img2_keypoints = pickle.load(f)
+def chunked_cluster_fast_detection(keypoints, image_dim, max_merge_dist: int):
+    chunked_hc = ChunkedHierarchicalClusteringMultithreaded(
+        image_dim, keypoints, max_merge_dist=max_merge_dist
+    )
+    chunked_keypoints = chunked_hc.run_clustering()
+    return chunked_keypoints
+
+def cluster_keypoints(image, input_filename, detection_threshold, image_db, cache, image_dim, max_merge_dist):
+    keypoint_cache_info = KeypointCacheInfo(
+        img_hash=input_filename,
+        is_clustered=False,
+        fast_detection_threshold=detection_threshold
+    )
+    image_id = image_db.add_image(image)
+
+    keypoints = cache.get_keypoints_if_exist(keypoint_cache_info)
+    if not keypoints:
+        keypoints = run_fast_detection(image_db, image_id, detection_threshold)
+        cache.store_keypoints_if_not_exist(keypoints, keypoint_cache_info)
+    # TODO not finding independent dicts for some reason... Maybe cache needs a reload.
+    # clustered_keypoint_cache_info = KeypointCacheInfo(
+    #     img_hash=input_filename,
+    #     is_clustered=True,
+    #     fast_detection_threshold=detection_threshold
+    # )
+
+    # clustered_keypoints = cache.get_keypoints_if_exist(clustered_keypoint_cache_info)
+    # if not clustered_keypoints:
+    return keypoints
+    clustered_keypoints = chunked_cluster_fast_detection(keypoints, image_dim, max_merge_dist)
+        # cache.store_keypoints_if_not_exist(keypoints, clustered_keypoint_cache_info)
+    return clustered_keypoints
+    # return keypoints
 
 
-# Drawing all keypoints on the images
-# for keypoint in img1_keypoints:
-#     draw_point(image1, keypoint.coord, img_height, img_width)
 
-# imwrite('./data/feature_matching_test/lego_space_1_from_left_keypoints.jpg', image1)
-
-# for keypoint in img2_keypoints:
-#     draw_point(image2, keypoint.coord, img_height, img_width)
-
-# imwrite('./data/feature_matching_test/lego_space_1_from_right_keypoints.jpg', image2)
-
-key1_to_key2_dist = match_keypoints(img1_keypoints, img2_keypoints, -1)
-
-def get_keypoint_2_coord(keypoint):
+def get_keypoint_2_coord(keypoint, img_width):
     return [i + j for i, j in zip(keypoint.coord, [0, img_width])]
 
-def draw_keypoint(img, keypoint, is_second:bool):
-    circle(img, get_keypoint_2_coord(keypoint)[::-1] if is_second else keypoint.coord[::-1], 20, (0, 0, 255) if is_second else (0, 255, 0), -1)
+def draw_keypoint(img, keypoint, is_second:bool, img_width):
+    circle(img, get_keypoint_2_coord(keypoint, img_width)[::-1] if is_second else keypoint.coord[::-1], 20, (0, 0, 255) if is_second else (0, 255, 0), -1)
 
-def draw_keypoint_line(img, keypoint1, keypoint2, color):
-    line(img, keypoint1.coord[::-1], get_keypoint_2_coord(keypoint2)[::-1], color, 10)
+def draw_keypoint_line(img, keypoint1, keypoint2, color, img_width):
+    line(img, keypoint1.coord[::-1], get_keypoint_2_coord(keypoint2, img_width)[::-1], color, 10)
 
-def label_keypoint(img, keypoint, keypoint_idx, is_second: bool):
-    putText(img, str(keypoint_idx), get_keypoint_2_coord(keypoint)[::-1] if is_second else keypoint.coord[::-1], FONT_HERSHEY_SIMPLEX, 4, color=(0, 255, 255), thickness=10)
-
-image_combined = np.hstack((image1, image2))
-for key1_idx in range(0, len(img1_keypoints), 3):
-    keypoint1 = img1_keypoints[key1_idx]
-    # print(keypoint1.descriptor)
-    # Print 10 next best keypoints
-    draw_keypoint(image_combined, keypoint1, is_second=False)
-    key2_idx, dist = key1_to_key2_dist[key1_idx, 0]
-    keypoint2 = img2_keypoints[key2_idx]
-    draw_keypoint(image_combined, keypoint2, is_second=True)
-    draw_keypoint_line(image_combined, keypoint1, keypoint2, (255, 0, 0))
-    # label_keypoint(image_combined, keypoint1, key1_idx, is_second=False)
-    # for idx in range(len(img2_keypoints)):
-    #     key2_idx, dist = key1_to_key2_dist[key1_idx, idx]
-    #     print(dist)
-    # for idx in range(10):
-    #     key2_idx, dist = key1_to_key2_dist[key1_idx, idx]
-    #     keypoint2 = img2_keypoints[key2_idx]
-    #     print(f"From: {key1_idx}, To: {key2_idx}, Dist: {dist}")
-    #     draw_keypoint(image_combined, keypoint2, is_second=True)
-    #     label_keypoint(image_combined, keypoint2, key2_idx, is_second=True)
-    #     draw_keypoint_line(image_combined, keypoint1, keypoint2, (255, 0, 0))
-
-# circle(image_combined, img1_keypoints[best_key1].coord[::-1], 20, (0, 255, 0), -1)
-# circle(image_combined, [i + j for i, j in zip(img2_keypoints[best_key2].coord, [img_height, img_width])][::-1], 20, (0, 0, 255), -1)
-
-imwrite('./data/feature_matching_test/15pt_star_combined.jpg', image_combined)
-# imwrite('./data/feature_matching_test/lego_space_1_combined.jpg', image_combined)
-
-# circle(image1, img1_keypoints[best_key1].coord[::-1], 20, (0, 255, 0), -1)
-# circle(image2, img2_keypoints[best_key2].coord[::-1], 20, (0, 255, 0), -1)
-# imwrite('./data/feature_matching_test/lego_space_1_from_left_matched.jpg', image1)
-# imwrite('./data/feature_matching_test/lego_space_1_from_right_matched.jpg', image2)
+def label_keypoint(img, keypoint, keypoint_idx, is_second: bool, img_width):
+    putText(img, str(keypoint_idx), get_keypoint_2_coord(keypoint, img_width)[::-1] if is_second else keypoint.coord[::-1], FONT_HERSHEY_SIMPLEX, 4, color=(0, 255, 255), thickness=10)
 
 
+def main():
+    cache = KeypointCache()
+    args = setup_and_parse_args()
+    input_filename_1 = args.input_file_1
+    input_filename_2 = args.input_file_2
+
+    image_1 = imread(input_filename_1)
+    image_2 = imread(input_filename_2)
+
+    # TODO should verify that image1 and 2 are the same shape
+    height, width, _ = image_1.shape
+    img_dim = (height, width)
+
+    image_db = ImageDB(height, width)
+
+    img_1_keypoints = cluster_keypoints(
+        image_1, input_filename_1,
+        args.detection_threshold, image_db, cache, img_dim, args.max_merge_dist
+    )
+    img_2_keypoints = cluster_keypoints(
+        image_2, input_filename_2,
+        args.detection_threshold, image_db, cache, img_dim, args.max_merge_dist
+    )
+
+    # print(img_2_keypoints)
+
+    key1_to_key2_dist = match_keypoints(img_1_keypoints, img_2_keypoints, -1)
+
+    image_combined = np.hstack((image_1, image_2))
+
+    # for key_idx in range(len(img_1_keypoints)):
+    #     draw_keypoint(image_combined, img_1_keypoints[key_idx], False, width)
+    # for key_idx in range(len(img_2_keypoints)):
+    #     draw_keypoint(image_combined, img_2_keypoints[key_idx], True, width)
+
+    for key1_idx in range(len(img_1_keypoints)):
+        keypoint1 = img_1_keypoints[key1_idx]
+        
+        # print(key1_to_key2_dist[key1_idx])
+        # return
+        key2_idx, dist = key1_to_key2_dist[key1_idx, 0]
+        if dist > args.match_threshold:
+            continue
+        # print(dist)
+        keypoint2 = img_2_keypoints[key2_idx]
+        
+        draw_keypoint(image_combined, keypoint1, False, width)
+        draw_keypoint(image_combined, keypoint2, True, width)
+        draw_keypoint_line(image_combined, keypoint1, keypoint2, (255, 0, 0), width)
+
+    imwrite('./data/feature_matching_test/matched_features_combined.jpg', image_combined)
+
+if __name__ == '__main__':
+    main()

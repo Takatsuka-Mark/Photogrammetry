@@ -1,28 +1,20 @@
 from photogrammetry.models.keypoint import KeyPoint
 import numpy as np
 from dataclasses import dataclass
-import math
-from time import time
 from typing import Optional
+import multiprocessing
+from abc import ABC, abstractmethod
 
 
 @dataclass
 class _HierarchicalCluster:
-    # cluster_id: int
     num_items: int
     center: np.ndarray
     keypoints: list[KeyPoint]
 
 
-
-
 class HierarchicalClustering:
     def __init__(self, keypoints: list[KeyPoint], max_merge_distance: int = 25) -> None:
-        self.time_calculating_distances = 0
-        self.time_merging_clusters = 0
-        self.time_removing_clusters = 0
-
-
         # TODO the max merge distance should be scaled via a percentage of the image size..
         self.max_merge_distance = max_merge_distance
         # Maps ID, to cluster object
@@ -30,11 +22,9 @@ class HierarchicalClustering:
         self.num_clusters_acc = 0
         self.active_clusters = set()    # Cluster ids
         self.num_keypoints = len(keypoints)
-        self.z = np.zeros((self.num_keypoints * 2 - 1, 4), dtype=np.int32)    # TODO is 32 sufficient?
+        self.z = np.zeros((max(self.num_keypoints * 2 - 1, 0), 4), dtype=np.int32)    # TODO is 32 sufficient?
         self.sorted_cluster_distances = []
-        start = time()
         self._initialize_clusters(keypoints)
-        # print(f"Time spent initializing clusters: {time() - start}")
 
     def _initialize_clusters(self, keypoints: list[KeyPoint]) -> None:
         for keypoint in keypoints:
@@ -72,7 +62,6 @@ class HierarchicalClustering:
         self.num_clusters_acc += 1
         self.cluster_map[cluster_id] = cluster
 
-        start = time()
         # TODO is there some way that we can only store a few minimum distances?
         # It does not make sense to store just one. But, how many are required?
         # min_dist = math.inf
@@ -83,7 +72,6 @@ class HierarchicalClustering:
             if dist > self.max_merge_distance:
                 continue
             self.sorted_cluster_distances.append((dist, cluster1, cluster_id))
-        self.time_calculating_distances += time() - start
         # TODO this is horrible that we're sorting every time (especially when we're only adding a single element at once.)
         # Perhaps we should offload sorting or allow it to be disabled.
         if not delay_sort:
@@ -93,7 +81,6 @@ class HierarchicalClustering:
         return cluster_id
 
     def _remove_clusters(self, cluster_ids: list[int]):
-        start = time()
         # TODO This could technically be slower than just checking if a given cluster distance includes
         # non-existent cluster_ids when popping it. It could be better to mix the two techniques. 
         for cluster_id in cluster_ids:
@@ -104,7 +91,6 @@ class HierarchicalClustering:
             _, c1, c2 = self.sorted_cluster_distances[i]
             if c1 in cluster_ids or c2 in cluster_ids:
                 self.sorted_cluster_distances.pop(i)
-        self.time_removing_clusters += time() - start
 
     # TODO rename to pop?
     def _min_dist_clusters(self) -> Optional[tuple[int, int, int]]:
@@ -114,13 +100,12 @@ class HierarchicalClustering:
             return None
         return self.sorted_cluster_distances.pop(0)
 
-    def run_clustering(self):
+    def run_clustering(self) -> list:
         # First, merge all clusters.
-        start = time()
         while len(self.active_clusters) > 1:
             # While there are still clusters to be merged, 
             
-            # TODO the maximum merge distance should probably be computed as a function of the size.
+            # TODO the maximum merge distance should probably be computed as a function of the cluster size.
             # TODO also, the max merge distance shouldn't be the only metric for ending clustering,
             # We need some form of detection to say, ok, we just performed a massive merge overall, cut it here.
             min_dist_tup = self._min_dist_clusters()
@@ -128,15 +113,8 @@ class HierarchicalClustering:
             if min_dist_tup is None:
                 break
             min_dist, min_dist_cluster1, min_dist_cluster2 = min_dist_tup
-            start2 = time()
             # TODO should make merge_clusters take a tuple or perhaps a dataclass
             self._merge_clusters(min_dist_cluster1, min_dist_cluster2, min_dist)
-            self.time_merging_clusters += time() - start2
-        
-        # print(f"Time spent clustering: {time() - start}")
-        # print(f"Time spent calculating distances: {self.time_calculating_distances}")
-        # print(f"Time spent merging clusters: {self.time_merging_clusters}")
-        # print(f"Time spent removing clusters: {self.time_removing_clusters}")
 
         clustered_keypoints = []
         # Since we are short circuting the loop, we can just take all active clusters and call it good.
@@ -156,23 +134,72 @@ class HierarchicalClustering:
                 )
             )
         return clustered_keypoints
-"""
-TODO one thing we can try is to - instead of creating individaul
-clusters and re-adding them immediately, go through and cluster everything together
-that can be immmediately, then compute new clusters and continue.
 
-TODO we could make chunks instead
-"""
+class BaseChunkedHierarchicalClustering(ABC):
+    def __init__(
+        self, img_dim: tuple[int, int], keypoints: list[KeyPoint], chunks_dim: tuple[int, int] = (4, 4),
+        max_merge_dist: int = 25, edge_merge_dist: Optional[int] = None
+    ) -> None:
+        self.chunks_dim = chunks_dim
+        self.max_merge_distance = max_merge_dist
+        self.height_chunk_off = img_dim[0] // chunks_dim[0]
+        self.width_chunk_off = img_dim[1] // chunks_dim[1]
+        self._init_keypoint_chunks(keypoints)
+    
+    @abstractmethod
+    def _init_keypoint_chunks(self, keypoints):
+        raise NotImplementedError()
+
+    def _keypoint_to_chunk_idx(self, keypoint):
+        h_chunk = min(keypoint.coord[0] // self.height_chunk_off, self.chunks_dim[0] - 1)
+        w_chunk = min(keypoint.coord[1] // self.width_chunk_off, self.chunks_dim[1] - 1)
+        return h_chunk, w_chunk
+
+    def _cluster_chunk(self, keypoints: list) -> list:
+        if len(keypoints) == 0:
+            return []
+        hc = HierarchicalClustering(keypoints, self.max_merge_distance)
+        return hc.run_clustering()
+
+    @abstractmethod
+    def run_clustering(self):
+        raise NotImplementedError()
 
 
-"""
-Result: (n - 1) by 4 matrix Z.
+class ChunkedHierarchicalClustering(BaseChunkedHierarchicalClustering):    
+    def _init_keypoint_chunks(self, keypoints):
+        keypoints_by_chunk = [[[] for _ in range(self.chunks_dim[1])] for _ in range(self.chunks_dim[0])]
+        for keypoint in keypoints:
+            h_chunk, w_chunk = self._keypoint_to_chunk_idx(keypoint)
+            keypoints_by_chunk[h_chunk][w_chunk].append(keypoint)
+        self.chunked_keypoints = keypoints_by_chunk
 
-At i'th iteration, clusters with indicies z[i, 0] and z[i, 1] are combined to form cluster n+1
+    def run_clustering(self) -> list:
+        clustered_keypoints_acc = []
+        for chunk_h in range(self.chunks_dim[0]):
+            for chunk_w in range(self.chunks_dim[1]):
+                clustered_keypoints_acc.extend(
+                    self._cluster_chunk(self.chunked_keypoints[chunk_h][chunk_w])
+                )
+        return clustered_keypoints_acc
 
-a cluster with an index less than n corresponds to one of n original observations.
+class ChunkedHierarchicalClusteringMultithreaded(BaseChunkedHierarchicalClustering):
+    def __init__(self, img_dim: tuple[int, int], keypoints: list[KeyPoint], chunks_dim: tuple[int, int] = (4, 4), max_merge_dist: int = 25, edge_merge_dist: Optional[int] = None, chunks_per_thread: Optional[int] = None) -> None:
+        self.chunks_per_thread = chunks_per_thread or 2
+        super().__init__(img_dim, keypoints, chunks_dim, max_merge_dist, edge_merge_dist)
+    
+    def _init_keypoint_chunks(self, keypoints):
+        self.chunked_keypoints = [[] for _ in range(self.chunks_dim[0] * self.chunks_dim[1])]
+        for keypoint in keypoints:
+            h_chunk, w_chunk = self._keypoint_to_chunk_idx(keypoint)
+            self.chunked_keypoints[h_chunk * self.chunks_dim[1] + w_chunk].append(keypoint)
 
-Each row looks like [cluster0_id, cluster1_id, dist_from_0_to_1, number of observations in cluster.]
-
-"""
-
+    def run_clustering(self) -> list:
+        clustered_keypoints_acc = []
+        
+        # TODO set size of pool manually?
+        pool = multiprocessing.Pool()
+        outputs = pool.map(self._cluster_chunk, [chunk for chunk in self.chunked_keypoints], chunksize=self.chunks_per_thread)
+        for output in outputs:
+            clustered_keypoints_acc.extend(output)
+        return clustered_keypoints_acc
