@@ -19,6 +19,10 @@ class KeypointCacheInfo:
             "fast_detection_threshold": self.fast_detection_threshold
         }
 
+# TODO critical importance - need to store gaussian pairs.
+# TODO need to create tmp folder if not exists.
+
+
 # TODO make a version of this that can take a general keypoint detector / clusterer
 # and decorate the function S.T. any calls to "get_keypoints" will be cached.
 class KeypointCache:

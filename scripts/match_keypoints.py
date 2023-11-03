@@ -20,15 +20,14 @@ def setup_and_parse_args():
     parser.add_argument('input_file_2')
     parser.add_argument('--detection-threshold', default=50, type=int, required=False)
     parser.add_argument('--max-merge-dist', default=25, type=int, required=False)
-    parser.add_argument('--match-threshold', default=50, type=int, required=False)
+    parser.add_argument('--match-threshold', default=75, type=int, required=False)
     return parser.parse_args()
 
 def draw_keypoints(img, keypoints, color):
     for keypoint in keypoints:
         circle(img, keypoint.coord[::-1], 5, color, -1)
 
-def run_fast_detection(image_db: ImageDB, image_id: int, detection_threshold: int):
-    fast_detector = FASTKeypointDetector(detection_threshold, image_db)
+def run_fast_detection(fast_detector: FASTKeypointDetector, image_id: int):
     keypoints = fast_detector.detect_points(image_id)
     return keypoints
 
@@ -39,7 +38,7 @@ def chunked_cluster_fast_detection(keypoints, image_dim, max_merge_dist: int):
     chunked_keypoints = chunked_hc.run_clustering()
     return chunked_keypoints
 
-def cluster_keypoints(image, input_filename, detection_threshold, image_db, cache, image_dim, max_merge_dist):
+def cluster_keypoints(image, input_filename, detection_threshold, image_db, cache, image_dim, max_merge_dist, fast_detector):
     keypoint_cache_info = KeypointCacheInfo(
         img_hash=input_filename,
         is_clustered=False,
@@ -49,7 +48,7 @@ def cluster_keypoints(image, input_filename, detection_threshold, image_db, cach
 
     keypoints = cache.get_keypoints_if_exist(keypoint_cache_info)
     if not keypoints:
-        keypoints = run_fast_detection(image_db, image_id, detection_threshold)
+        keypoints = run_fast_detection(fast_detector, image_id)
         cache.store_keypoints_if_not_exist(keypoints, keypoint_cache_info)
     # TODO not finding independent dicts for some reason... Maybe cache needs a reload.
     # clustered_keypoint_cache_info = KeypointCacheInfo(
@@ -60,7 +59,7 @@ def cluster_keypoints(image, input_filename, detection_threshold, image_db, cach
 
     # clustered_keypoints = cache.get_keypoints_if_exist(clustered_keypoint_cache_info)
     # if not clustered_keypoints:
-    return keypoints
+    # return keypoints
     clustered_keypoints = chunked_cluster_fast_detection(keypoints, image_dim, max_merge_dist)
         # cache.store_keypoints_if_not_exist(keypoints, clustered_keypoint_cache_info)
     return clustered_keypoints
@@ -96,13 +95,16 @@ def main():
 
     image_db = ImageDB(height, width)
 
+    fast_detector = FASTKeypointDetector(args.detection_threshold, image_db)
     img_1_keypoints = cluster_keypoints(
         image_1, input_filename_1,
-        args.detection_threshold, image_db, cache, img_dim, args.max_merge_dist
+        args.detection_threshold, image_db, cache, img_dim, args.max_merge_dist,
+        fast_detector
     )
     img_2_keypoints = cluster_keypoints(
         image_2, input_filename_2,
-        args.detection_threshold, image_db, cache, img_dim, args.max_merge_dist
+        args.detection_threshold, image_db, cache, img_dim, args.max_merge_dist,
+        fast_detector
     )
 
     # print(img_2_keypoints)
