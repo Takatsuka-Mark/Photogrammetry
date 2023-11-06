@@ -1,8 +1,8 @@
-from cv2 import Mat, cvtColor, COLOR_BGR2GRAY
 import numpy as np
 import time
+from photogrammetry.models.keypoint import KeyPoint, generate_gaussian_pairs
+from photogrammetry.storage.image_db import ImageDB
 import multiprocessing
-from dataclasses import dataclass
 """
 https://homepages.inf.ed.ac.uk/rbf/CVonline/LOCAL_COPIES/AV1011/AV1FeaturefromAcceleratedSegmentTest.pdf
 """
@@ -33,27 +33,26 @@ BRESENHAM_CIRCLE_3_TP = BRESENHAM_CIRCLE_3.transpose((1, 0))
 MINI_BRESENHAM_CIRCLE_3_TP = MINI_BRESENHAM_CIRCLE_3.transpose((1, 0))
 
 
-@dataclass
-class KeyPoint:
-    coord: np.ndarray
-    moment: float
-    descriptor: int
-
-
 class FASTKeypointDetector:
-    def __init__(self, threshold, img_height, img_width) -> None:
+    def __init__(self, threshold, image_db: ImageDB) -> None:
+        """
+        :param threshold: The distance between the test point's intensity for it to be considered a notable point.
+        """
         self.threshold = threshold
-        self.img_height = img_height
-        self.img_width = img_width
+        self._image_db = image_db
+        self.img_height, self.img_width = self._image_db.dim
 
         # Placeholder values. Could use properties to set with proper placeholder values.
         self._bw_img = np.empty(0)
         self._bounds = np.empty(0)
 
         self._time_acc = 0
+        # TODO stdev as param.
+        self._gaussian_pairs = generate_gaussian_pairs(stdev=50)
 
-    def _config_caches(self, image: Mat):
-        self._bw_img = cvtColor(image, COLOR_BGR2GRAY).astype(np.int16)
+    def _config_caches(self, image_id):
+        self._time_acc = 0
+        self._bw_img = self._image_db.get_bw_image(image_id)
         # Convert into array like [[[lower, upper], [lower, upper], ...],[],...]
         # Packing bounds like this seems to have reduced from 5.7 seconds to 5.45
         # Caching bounds in general also saves reduces from 6 to 2.7 seconds
@@ -134,7 +133,7 @@ class FASTKeypointDetector:
             if is_potential:
                 bres_circle = self._fetch_bresenham_circle(u, v)
                 if self._is_keypoint(ip_bounds, bres_circle):
-                    keypoints.append([u, v])
+                    keypoints.append(np.array([u, v]))    # TODO added np.array. Find performance impact.
 
             # Is keypoint taking ~1.18 seconds
         return keypoints
@@ -145,58 +144,44 @@ class FASTKeypointDetector:
             keypoints.extend(self._process_row(x))
         return keypoints
 
-    def detect_points(self, image: Mat):
+    def detect_points(self, image_id: int):
         # TODO we are excluding the 3 pixel border because it requires extra thought. Determine if this is OK
         # contents like [(height, width), (height2, width2)]
         raw_keypoints = []
         now = time.time()
 
-        self._config_caches(image)
+        self._config_caches(image_id)
 
+
+        # TODO implement two different classes for multiprocessing & not
         # Multiprocessing method. 1920x1080 ~ 1.81 seconds, 33886 keypoints. ~1.5 after refactor? ~0.67 after first Bres re-work + chunk size modification.
         # 15pt star ~ 0.152 seconds, 128 keypoints
-        # pool = multiprocessing.Pool()
-        # num_rows_per_process = 50
-        # outputs = pool.map(self._process_row, range(3, self.img_height-3), chunksize=num_rows_per_process)
-        # for output in outputs:
-        #     keypoints.extend(output)
+        pool = multiprocessing.Pool()
+        num_rows_per_process = 50
+        outputs = pool.map(self._process_row, range(3, self.img_height-3), chunksize=num_rows_per_process)
+        for output in outputs:
+            raw_keypoints.extend(output)
         
         # Regular method. 1920x1080 ~ 15.9 seconds, 33886 keypoints. ~6 after threshold refactor. ~2.54 after first Bresenham re-work
         # 15pt star ~ 1.158 seconds, 128 keypoints
-        for u in range(3, self.img_height-3):
-            raw_keypoints.extend(self._process_row(u))
+        # for u in range(3, self.img_height-3):
+        #     raw_keypoints.extend(self._process_row(u))
         print(time.time() - now)
         print("time_acc clocked", self._time_acc, "seconds")
         keypoints = []
         for keypoint in raw_keypoints:
-            keypoints.append(KeyPoint(keypoint, self._direction(keypoint[0], keypoint[1]), self._brief_descriptor(keypoint[0], keypoint[1])))
+            keypoints.append(KeyPoint(image_id, keypoint, self._gaussian_pairs, self._image_db))
+            # keypoints.append(KeyPoint(keypoint, self._direction(keypoint[0], keypoint[1]), self._brief_descriptor(keypoint[0], keypoint[1])))
         return keypoints
 
     def _moment(self, u, v, p, q):
         # Let u, v be the height and width.
         # https://iopscience.iop.org/article/10.1088/1742-6596/1693/1/012068/pdf
         acc = 0
+
         for x, y in BRESENHAM_CIRCLE_3:
             acc += (x ** p) * (y ** q) * self._bw_img[x + u, y + v]     # TODO determine if x, y or y, x. Not sure if it matters
         return acc
     
     def _direction(self, u, v):
         return np.arctan2(self._moment(u, v, 0, 1), self._moment(u, v, 1, 0))
-
-    def _brief_descriptor(self, u, v) -> int:
-        # TODO would be useful to take a smoothed 9x9 patch and then compute the descriptor over this
-        pairs = self._gaussian_pair_selector(u, v, 10, num_pairs=5)  # TODO DETERMINE THE STDEV TO USE
-        des = 0
-        for idx, pair in enumerate(pairs):
-            p1 = self._bw_img[pair[0][0], pair[0][1]]
-            p2 = self._bw_img[pair[1][0], pair[1][1]]
-            if p1 < p2:
-                des += (2**idx)
-        return des
-
-    def _gaussian_pair_selector(self, u, v, stdev, num_pairs=128):
-        # TODO there are better algorithms for pair selection. See https://www.cs.ubc.ca/~lowe/525/papers/calonder_eccv10.pdf
-        pairs = np.zeros((num_pairs, 2, 2), dtype=np.int64)    # TODO does this really need to be 64?
-        for idx in range(num_pairs):
-            pairs[idx] = [np.rint(np.random.normal([u, v], stdev)).astype(np.int64), np.rint(np.random.normal([u, v], stdev)).astype(np.int64)]
-        return pairs

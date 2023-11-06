@@ -161,3 +161,7 @@ cython_debug/
 
 data/tmp/
 .vscode/
+
+blender/*/render/
+.DS_Store
+*.blend1

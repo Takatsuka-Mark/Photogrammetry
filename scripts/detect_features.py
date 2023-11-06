@@ -1,6 +1,8 @@
 from argparse import ArgumentParser
-from cv2 import imread, Mat, imwrite
+from cv2 import imread, Mat, imwrite, circle
 from photogrammetry.image_processing.keypoint_detection import FASTKeypointDetector
+from photogrammetry.storage.image_db import ImageDB
+import time
 
 def setup_and_parse_args():
     parser = ArgumentParser(
@@ -10,33 +12,37 @@ def setup_and_parse_args():
     parser.add_argument('input_file')
     return parser.parse_args()
 
-def run_fast_detection(image: Mat):
-    # keypoints = fast_detection(image)
-    img_height, img_width, _ = image.shape
-    fast_detector = FASTKeypointDetector(10, img_height, img_width)
-    keypoints = fast_detector.detect_points(image)
+def draw_keypoint(img, keypoint):
+    circle(img, keypoint.coord[::-1], 5, (0, 255, 0), -1)
 
-    print(len(keypoints), "keypoints found")
-    height, width, _ = image.shape
+def run_fast_detection(image_db: ImageDB, image_id: int):
+    # keypoints = fast_detection(image)
+    fast_detector = FASTKeypointDetector(50, image_db)
+    keypoints = fast_detector.detect_points(image_id)
+    return keypoints
+
+def draw_keypoints(keypoints, image_db, image_id, filename):
+    image = image_db.get_image(image_id)
 
     for keypoint in keypoints:
-        x = keypoint.coord[0]
-        y = keypoint.coord[1]
-        # TODO need to clamp this inside of frame
-        for u in range(x-2, x+3):
-            for v in range(y-2, y+3):
-                if u >= height or u < 0 or v >= width or v < 0:
-                    continue
-                image[u, v] = [0, 255, 0]
+        draw_keypoint(image, keypoint)
     # TODO pass as arg
-    imwrite('./data/feature_detection_test/fast_detected.jpg', image)
+    imwrite(f"{filename[:-4]}_fast_detected.jpg", image)
+    return keypoints
 
 def main():
-    base_dir = './data/feature_detection_test'
     args = setup_and_parse_args()
-    image = imread(args.input_file)
-
-    run_fast_detection(image)
+    input_filename = args.input_file
+    image = imread(input_filename)
+    height, width, _ = image.shape
+    image_db = ImageDB(height, width)
+    image_id = image_db.add_image(image)
+    start = time.time()
+    keypoints = run_fast_detection(image_db, image_id)
+    print(len(keypoints), "keypoints found")
+    print(f"Fast detection took {time.time() - start}")
+    draw_keypoints(keypoints, image_db, image_id, input_filename)
+    
 
 if __name__ == '__main__':
     main()
