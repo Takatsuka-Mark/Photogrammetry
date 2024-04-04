@@ -1,9 +1,12 @@
-﻿namespace Photogrammetry;
+using SambaReader;
 
-class Program
+namespace Photogrammetry;
+
+public class Program
 {
-    static void Main(string[] args)
+    public static void Main(string[] args)
     {
-        Console.WriteLine("Hello, World!");
+        var sambaReader = new SambaReader.SambaReader();
+        sambaReader.ReadImageFromDirectory("straight_edge_1920x1080.jpg");
     }
 }
