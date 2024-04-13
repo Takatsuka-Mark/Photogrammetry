@@ -9,12 +9,6 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\SambaReader\SambaReader.csproj" />
-    </ItemGroup>
-    
-    <ItemGroup>
-        <None Include="straight_edge_1920x1080.jpg">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        </None>
+      <ProjectReference Include="..\ImageReader.LocalImageReader\ImageReader.LocalImageReader.csproj" />
     </ItemGroup>
 </Project>
