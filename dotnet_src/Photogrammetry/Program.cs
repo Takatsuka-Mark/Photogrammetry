@@ -8,6 +8,6 @@ public class Program
     {
         var imageReader = new LocalImageReader();
         var image = imageReader.ReadImageFromDirectory("straight_edge_1920x1080.jpg");
-        imageReader.WriteImageToDirectory(image, "output.jpg");
+        imageReader.WriteImageToDirectory(image, "output");
     }
 }

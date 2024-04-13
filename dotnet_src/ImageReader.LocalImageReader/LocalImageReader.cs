@@ -1,3 +1,4 @@
+using System.Numerics;
 using SixLabors.ImageSharp.PixelFormats;
 using Images.Abstractions.Pixels;
 using SixLabors.ImageSharp;
@@ -17,7 +18,7 @@ public class LocalImageReader
     public Images.Abstractions.Image<Rgba> ReadImageFromDirectory(string filename)
     {
 
-        var rawImage = Image.Load<Rgba32>($"{_options.RootDirectory}/{filename}");
+        var rawImage = Image.Load<Rgba64>($"{_options.RootDirectory}/{filename}");
         var myImage = new Images.Abstractions.Image<Rgba>(rawImage.Width, rawImage.Height);
         
         for (var x = 0; x < rawImage.Width; x++)
@@ -40,19 +41,18 @@ public class LocalImageReader
 
     public void WriteImageToDirectory(Images.Abstractions.Image<Rgba> rawImage, string filename)
     {
-        // TODO look into how this is getting compressed.
-        using (var image = new Image<Rgba32>(rawImage.Width, rawImage.Height))
+        using (var image = new Image<Rgba64>(rawImage.Width, rawImage.Height))
         {
             for (var x = 0; x < rawImage.Width; x++)
             {
                 for (var y = 0; y < rawImage.Height; y++)
                 {
                     var originalPixel = rawImage[x, y];
-                    image[x, y] = new Rgba32(originalPixel.R, originalPixel.G, originalPixel.B, originalPixel.A);
+                    image[x, y] = new Rgba64(new Vector4(originalPixel.R, originalPixel.G, originalPixel.B, originalPixel.A));
                 }
             }
-            
-            image.SaveAsJpeg($"{_options.RootOutputDirectory}/{filename}");
+
+            image.SaveAsBmp($"{_options.RootOutputDirectory}/{filename}.bmp");
         }
     }
 }
