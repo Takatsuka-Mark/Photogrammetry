@@ -1,4 +1,5 @@
 using System.Numerics;
+using Images.Abstractions;
 using SixLabors.ImageSharp.PixelFormats;
 using Images.Abstractions.Pixels;
 using SixLabors.ImageSharp;
@@ -19,7 +20,7 @@ public class LocalImageReader
     {
 
         var rawImage = Image.Load<Rgba64>($"{_options.RootDirectory}/{filename}");
-        var myImage = new Images.Abstractions.Image<Rgba>(rawImage.Width, rawImage.Height);
+        var myImage = new Images.Abstractions.Image<Rgba>(new ImageDimensions(rawImage.Width, rawImage.Height));
         
         for (var x = 0; x < rawImage.Width; x++)
         {
@@ -41,11 +42,12 @@ public class LocalImageReader
 
     public void WriteImageToDirectory(Images.Abstractions.Image<Rgba> rawImage, string filename)
     {
-        using (var image = new Image<Rgba64>(rawImage.Width, rawImage.Height))
+
+        using (var image = new SixLabors.ImageSharp.Image<Rgba64>(rawImage.Dimensions.Width, rawImage.Dimensions.Height))
         {
-            for (var x = 0; x < rawImage.Width; x++)
+            for (var x = 0; x < rawImage.Dimensions.Width; x++)
             {
-                for (var y = 0; y < rawImage.Height; y++)
+                for (var y = 0; y < rawImage.Dimensions.Height; y++)
                 {
                     var originalPixel = rawImage[x, y];
                     image[x, y] = new Rgba64(new Vector4(originalPixel.R, originalPixel.G, originalPixel.B, originalPixel.A));

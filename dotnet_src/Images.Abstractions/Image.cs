@@ -2,16 +2,14 @@ namespace Images.Abstractions;
 
 public class Image<TPixel>
 {
-    public int Width { get; }
-    public int Height { get; }
-    
+    public ImageDimensions Dimensions { get; }
+
     private readonly TPixel[,] _pixels;
 
-    public Image(int width, int height)
+    public Image(ImageDimensions dimensions)
     {
-        Width = width;
-        Height = height;
-        _pixels = new TPixel[width, height];
+        Dimensions = dimensions;
+        _pixels = new TPixel[dimensions.Width, dimensions.Height];
     }
 
     public TPixel this[int x, int y]
@@ -30,7 +28,7 @@ public class Image<TPixel>
 
     public void ValidateCoords(int x, int y)
     {
-        if (!(x >= 0 && y >= 0 && x < Width && y < Height))
-            throw new ArgumentOutOfRangeException($"Received X:{x}, Y:{y} for image of Height:{Height}, Width:{Width}");
+        if (!(x >= 0 && y >= 0 && x < Dimensions.Width && y < Dimensions.Height))
+            throw new ArgumentOutOfRangeException($"Received X:{x}, Y:{y} for image of Height:{Dimensions.Width}, Width:{Dimensions.Height}");
     }
 }
