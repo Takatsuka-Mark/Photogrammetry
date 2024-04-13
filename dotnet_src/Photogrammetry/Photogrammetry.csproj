@@ -9,6 +9,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\ImageProcessing\ImageProcessing.csproj" />
       <ProjectReference Include="..\ImageReader.LocalImageReader\ImageReader.LocalImageReader.csproj" />
     </ItemGroup>
 </Project>
