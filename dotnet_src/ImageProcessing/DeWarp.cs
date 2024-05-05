@@ -10,10 +10,12 @@ namespace ImageProcessing;
 public class DeWarp
 {
     private readonly ImageDimensions _dimensions;
+    private readonly Dictionary<int, double> _rd2ToRootCache = new();
 
     public DeWarp(ImageDimensions dimensions)
     {
         _dimensions = dimensions;
+        
     }
 
     public static Image<TPixel> ApplyDistortionMat<TPixel>(Image<TPixel> image, DistortionMatrix distortionMatrix)
@@ -43,7 +45,7 @@ public class DeWarp
         if (distortionCoefficients.Length != 5)
              // TODO is there a way we can force this through params, without requiring 5 params? Perhaps it's own class...
             throw new ArgumentException("You must pass exactly 5 distortion coefficients");
-
+        
         var distortionMatrix = new DistortionMatrix(_dimensions);
 
         // TODO think about how these are being cast
@@ -59,22 +61,28 @@ public class DeWarp
 
                 var rd2 = x * x + y * y;
 
-                var rd = Math.Sqrt(rd2);
+                if (!_rd2ToRootCache.TryGetValue(rd2, out var root))
+                {
+                    var rd = Math.Sqrt(rd2);
                 
-                var b = (rd * distortionCoefficients[3] - distortionCoefficients[0]) /
-                        (rd * distortionCoefficients[4] - distortionCoefficients[1]);
-                var c = (rd * distortionCoefficients[2] - 1) /
-                        (rd * distortionCoefficients[4] - distortionCoefficients[1]);
-                var d = rd / (rd * distortionCoefficients[4] - distortionCoefficients[1]);
+                    var b = (rd * distortionCoefficients[3] - distortionCoefficients[0]) /
+                            (rd * distortionCoefficients[4] - distortionCoefficients[1]);
+                    var c = (rd * distortionCoefficients[2] - 1) /
+                            (rd * distortionCoefficients[4] - distortionCoefficients[1]);
+                    var d = rd / (rd * distortionCoefficients[4] - distortionCoefficients[1]);
                 
-                // TODO write own program to calculate roots
-                var (root1, root2, root3) = Cubic.RealRoots(d, c, b); // TODO what order should these be entered?
+                    // TODO write own program to calculate roots
+                    var (root1, root2, root3) = Cubic.RealRoots(d, c, b); // TODO what order should these be entered?
 
-                var sortedRoots = (new List<double> { root1, root2, root3 }).Where(r => !double.IsNaN(r)).ToList();
-                sortedRoots.Sort();
+                    var sortedRoots = (new List<double> { root1, root2, root3 }).Where(r => !double.IsNaN(r)).ToList();
+                    sortedRoots.Sort();
                 
-                // TODO this might be necessary with different coefficients, but with {3e-4, 1e-7, 0, 0, 0} it is always 1 root.
-                var root = sortedRoots.Count == 3 ? sortedRoots[1] : sortedRoots[0];
+                    // TODO this might be necessary with different coefficients, but with {3e-4, 1e-7, 0, 0, 0} it is always 1 root.
+                    var calculatedRoot = sortedRoots.Count == 3 ? sortedRoots[1] : sortedRoots[0];
+
+                    root = calculatedRoot;
+                    _rd2ToRootCache.Add(rd2, root);
+                }
 
                 // var root = sortedRoots[0];
                 // if (u == 0 && v == 0)
