@@ -33,3 +33,5 @@ artifacts/
 .idea
 *.sln.iml
 *.sln.ide
+
+../.gitconfig
