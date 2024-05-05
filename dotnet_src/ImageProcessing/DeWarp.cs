@@ -16,7 +16,27 @@ public class DeWarp
         _dimensions = dimensions;
     }
 
-    public DistortionMatrix GetDistortionMatrix(double[] distortionCoefficients )
+    public static Image<TPixel> ApplyDistortionMat<TPixel>(Image<TPixel> image, DistortionMatrix distortionMatrix)
+    {
+        // TODO could move somewhere like on the distortion mat itself...
+        if (!Equals(image.Dimensions, distortionMatrix.Dimensions))
+            throw new ArgumentException("Dimensions of image and distortion matrix must be equal.");
+
+        var resultImage = new Image<TPixel>(image.Dimensions);
+
+        for (var x = 0; x < image.Dimensions.Width; x++)
+        {
+            for (int y = 0; y < image.Dimensions.Height; y++)
+            {
+                var newPixel = distortionMatrix[x, y];
+                resultImage[x, y] = image[newPixel.U, newPixel.V];
+            }
+        }
+        
+        return resultImage;
+    }
+    
+    public DistortionMatrix GetDistortionMatrix(double[] distortionCoefficients)
     {
         // TODO we may just want to make this static
         // TODO implement caching for the matrix.
@@ -54,23 +74,13 @@ public class DeWarp
                 sortedRoots.Sort();
                 
                 // TODO this might be necessary with different coefficients, but with {3e-4, 1e-7, 0, 0, 0} it is always 1 root.
-                double root;
-                if (sortedRoots.Count == 3)
-                {
-                    root = sortedRoots[1];
-                }
-                else
-                {
-                    root = sortedRoots[0];
-                }
+                var root = sortedRoots.Count == 3 ? sortedRoots[1] : sortedRoots[0];
 
                 // var root = sortedRoots[0];
-                
                 // if (u == 0 && v == 0)
                 // {
                 //     Console.WriteLine($"x:{x} y:{y} rd:{rd} b:{b} c:{c} d:{d} root:{root}");
                 // }
-                
                 var theta = Math.Atan2(y, x);
 
                 var xd = root * double.Cos(theta);
