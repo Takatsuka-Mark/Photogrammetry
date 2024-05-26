@@ -7,22 +7,22 @@ namespace ImageProcessing;
 
 public class DeWarp
 {
-    private readonly ImageDimensions _dimensions;
+    private readonly MatrixDimensions _dimensions;
     private readonly Dictionary<int, double> _rd2ToRootCache = new();
 
-    public DeWarp(ImageDimensions dimensions)
+    public DeWarp(MatrixDimensions dimensions)
     {
         _dimensions = dimensions;
         
     }
 
-    public static Image<TPixel> ApplyDistortionMat<TPixel>(Image<TPixel> image, DistortionMatrix distortionMatrix)
+    public static Matrix<TPixel> ApplyDistortionMat<TPixel>(Matrix<TPixel> image, DistortionMatrix distortionMatrix)
     {
         // TODO could move somewhere like on the distortion mat itself...
         if (!Equals(image.Dimensions, distortionMatrix.Dimensions))
             throw new ArgumentException("Dimensions of image and distortion matrix must be equal.");
 
-        var resultImage = new Image<TPixel>(image.Dimensions);
+        var resultImage = new Matrix<TPixel>(image.Dimensions);
 
         for (var x = 0; x < image.Dimensions.Width; x++)
         {

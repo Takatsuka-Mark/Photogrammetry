@@ -21,11 +21,11 @@ public class Program
         Console.WriteLine($"Elapsed: {sw.Elapsed}");
     }
 
-    public static Image<Rgba> TestDeWarp(Image<Rgba> inputImage)
+    public static Matrix<Rgba> TestDeWarp(Matrix<Rgba> inputImage)
     {
         var swNoIo = new Stopwatch();
         swNoIo.Start();
-        var deWarp = new DeWarp(new ImageDimensions(1920, 1080));
+        var deWarp = new DeWarp(new MatrixDimensions(1920, 1080));
         var distortionMatrix = deWarp.GetDistortionMatrix(new[] {3e-4, 1e-7, 0, 0, 0});
         var distMatTime = swNoIo.Elapsed;
         swNoIo.Restart();

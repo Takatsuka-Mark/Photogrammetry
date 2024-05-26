@@ -1,8 +1,8 @@
 namespace Images.Abstractions;
 
-public class ImageDimensions
+public class MatrixDimensions
 {
-    public ImageDimensions(int width, int height)
+    public MatrixDimensions(int width, int height)
     {
         Width = width;
         Height = height;
@@ -11,7 +11,7 @@ public class ImageDimensions
     public int Width { get; }
     public int Height { get; }
 
-    protected bool Equals(ImageDimensions other)
+    protected bool Equals(MatrixDimensions other)
     {
         return Width == other.Width && Height == other.Height;
     }
@@ -21,7 +21,7 @@ public class ImageDimensions
         if (ReferenceEquals(null, obj)) return false;
         if (ReferenceEquals(this, obj)) return true;
         if (obj.GetType() != this.GetType()) return false;
-        return Equals((ImageDimensions)obj);
+        return Equals((MatrixDimensions)obj);
     }
 
     public override int GetHashCode()
