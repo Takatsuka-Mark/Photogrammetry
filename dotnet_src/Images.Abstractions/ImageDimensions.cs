@@ -1,9 +1,15 @@
 namespace Images.Abstractions;
 
-public class ImageDimensions(int width, int height)
+public class ImageDimensions
 {
-    public int Width { get; } = width;
-    public int Height { get; } = height;
+    public ImageDimensions(int width, int height)
+    {
+        Width = width;
+        Height = height;
+    }
+
+    public int Width { get; }
+    public int Height { get; }
 
     protected bool Equals(ImageDimensions other)
     {

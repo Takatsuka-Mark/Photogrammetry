@@ -26,7 +26,7 @@ public class Program
         var swNoIo = new Stopwatch();
         swNoIo.Start();
         var deWarp = new DeWarp(new ImageDimensions(1920, 1080));
-        var distortionMatrix = deWarp.GetDistortionMatrix([3e-4, 1e-7, 0, 0, 0]);
+        var distortionMatrix = deWarp.GetDistortionMatrix(new[] {3e-4, 1e-7, 0, 0, 0});
         var distMatTime = swNoIo.Elapsed;
         swNoIo.Restart();
         

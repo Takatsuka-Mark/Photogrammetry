@@ -1,5 +1,3 @@
-using System.ComponentModel.DataAnnotations;
-using System.Runtime.Intrinsics.X86;
 using ImageProcessing.Abstractions;
 using Images.Abstractions;
 using Images.Abstractions.Pixels;
@@ -91,8 +89,8 @@ public class DeWarp
                 // }
                 var theta = Math.Atan2(y, x);
 
-                var xd = root * double.Cos(theta);
-                var yd = root * double.Sin(theta);
+                var xd = root * Math.Cos(theta);
+                var yd = root * Math.Sin(theta);
 
                 distortionMatrix[u, v] = new Uv
                 {

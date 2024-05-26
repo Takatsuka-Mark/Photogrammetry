@@ -31,5 +31,7 @@ namespace ImageProcessing;
 public class KeypointDetection
 {
     private static int[,] _bresenhamCircle3 = {{-3, 0}, {-3, 1}, {-2, 2}, {-1, 3}, {0, 3}, {1, 3}, {2, 2}, {3, 1}, {3, 0}, {3, -1}, {2, -2}, {1, -3}, {0, -3}, {-1, -3}, {-2, -2}, {-3, 1}};
-    private static int[,] _miniBresenhamCircle3 = 
+    // private static int[,] _miniBresenhamCircle3;
+    
+    
 }
