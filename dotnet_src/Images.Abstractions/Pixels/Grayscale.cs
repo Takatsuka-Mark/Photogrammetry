@@ -9,4 +9,10 @@ public class Grayscale
     {
         return new() { K = (input.R + input.B + input.G) / 3 };
     }
+
+    public static Grayscale FromRgba(Rgba input)
+    {
+        // TODO this conversion drops the A.
+        return new() { K = (input.R + input.B + input.G) / 3 };
+    }
 }
