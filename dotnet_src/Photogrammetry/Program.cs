@@ -47,12 +47,12 @@ public class Program
         var swNoIo = new Stopwatch();
         swNoIo.Start();
         
-        var keypointDetector = new KeypointDetection(0.5f);
+        var keypointDetector = new KeypointDetection(0.5f, 50, 256);
 
         var initializeTime = swNoIo.Elapsed;
         swNoIo.Restart();
         
-        // TODO note this conversion ignores albedo.
+        // TODO note this conversion ignores `a`
         var bwImage = inputImage.Convert(Grayscale.FromRgba);
         var keypoints = keypointDetector.Detect(bwImage);
 

@@ -16,13 +16,18 @@ public class KeypointDetection
     private readonly Matrix<int> _miniBresenhamCircle3 = Matrix<int>.FromArray(new[,] { { -3, 0 }, {0 , 3}, {3,0}, {0, -3} });
     private readonly Matrix<int> _bresenhamCircle3T;
     private readonly Matrix<int> _miniBresenhamCircle3T;
+    private readonly List<(Coordinate, Coordinate)> _gaussianKeypairs;
 
-    public KeypointDetection(float threshold)
+    public KeypointDetection(float threshold, int gaussianStdev, int numGaussians)
     {
         // Since grayscale is a float from 0 to 1, setting the threshold to a float. Could convert to a int [0, 255] instead (like original)
         _threshold = threshold; // The difference between point's intensity for it to be considered a keypoint
         _bresenhamCircle3T = _bresenhamCircle3.Transpose();
         _miniBresenhamCircle3T = _miniBresenhamCircle3.Transpose();
+        var utils = new Utils();
+
+        _gaussianKeypairs = Enumerable.Range(0, numGaussians)
+            .Select(_ => utils.NextGaussianPair(gaussianStdev)).ToList();
     }
 
     public List<Keypoint> Detect(Matrix<Grayscale> image)
@@ -34,7 +39,7 @@ public class KeypointDetection
             {
                 if (IsKeypoint(image, x, y))
                 {
-                    keypoints.Add(new Keypoint(0, x, y)); // TODO once images are IDed, start passing this value
+                    keypoints.Add(new Keypoint(0, x, y, _gaussianKeypairs, image)); // TODO once images are IDed, start passing this value
                 }
             }    
         }
