@@ -2,14 +2,16 @@
 
     <PropertyGroup>
         <OutputType>Exe</OutputType>
-        <TargetFramework>net8.0</TargetFramework>
+        <TargetFramework>net6.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     </PropertyGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\ImageProcessing.Abstractions\ImageProcessing.Abstractions.csproj" />
       <ProjectReference Include="..\ImageProcessing\ImageProcessing.csproj" />
       <ProjectReference Include="..\ImageReader.LocalImageReader\ImageReader.LocalImageReader.csproj" />
+      <ProjectReference Include="..\Images.Abstractions\Images.Abstractions.csproj" />
     </ItemGroup>
 </Project>

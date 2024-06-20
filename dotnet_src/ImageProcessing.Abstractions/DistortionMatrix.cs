@@ -3,9 +3,9 @@ using Images.Abstractions.Pixels;
 
 namespace ImageProcessing.Abstractions;
 
-public class DistortionMatrix : Image<Uv>
+public class DistortionMatrix : Matrix<Uv>
 {
-    public DistortionMatrix(ImageDimensions dimensions) : base(dimensions)
+    public DistortionMatrix(MatrixDimensions dimensions) : base(dimensions)
     {
     }
 }

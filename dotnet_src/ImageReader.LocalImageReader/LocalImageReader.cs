@@ -16,11 +16,11 @@ public class LocalImageReader
         _options = new ImageReaderOptions();
     }
 
-    public Images.Abstractions.Image<Rgba> ReadImageFromDirectory(string filename)
+    public Images.Abstractions.Matrix<Rgba> ReadImageFromDirectory(string filename)
     {
 
         var rawImage = Image.Load<Rgba64>($"{_options.RootDirectory}/{filename}");
-        var myImage = new Images.Abstractions.Image<Rgba>(new ImageDimensions(rawImage.Width, rawImage.Height));
+        var myImage = new Images.Abstractions.Matrix<Rgba>(new MatrixDimensions(rawImage.Width, rawImage.Height));
         
         for (var x = 0; x < rawImage.Width; x++)
         {
@@ -40,7 +40,7 @@ public class LocalImageReader
         return myImage;
     }
 
-    public void WriteImageToDirectory(Images.Abstractions.Image<Rgba> rawImage, string filename)
+    public void WriteImageToDirectory(Images.Abstractions.Matrix<Rgba> rawImage, string filename)
     {
 
         using (var image = new SixLabors.ImageSharp.Image<Rgba64>(rawImage.Dimensions.Width, rawImage.Dimensions.Height))
