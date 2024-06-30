@@ -46,6 +46,4 @@ public class Utils
             Y = Math.Max(Math.Min(coordinate.Y, clampDimensions.Height - 1), 0)
         };
     }
-
-
 }

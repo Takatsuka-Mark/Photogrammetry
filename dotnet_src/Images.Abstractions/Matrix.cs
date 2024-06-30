@@ -14,6 +14,8 @@ public class Matrix<TData>
         _pixels = new TData[dimensions.Width, dimensions.Height];
     }
 
+    // TODO maybe some of this should go into a Images project.
+    
     public static Matrix<TData> FromArray(TData[,] data)
     {
         var numRows = data.GetLength(0);
@@ -34,6 +36,7 @@ public class Matrix<TData>
 
     public TData this[int x, int y]
     {
+        // TODO maybe just rename these all to dim 0 and dim 1
         get
         {
             ValidateCoords(x, y);
@@ -46,9 +49,14 @@ public class Matrix<TData>
         }
     }
 
+    public bool CoordsAreValid(int x, int y)
+    {
+        return x >= 0 && y >= 0 && x < Dimensions.Width && y < Dimensions.Height;
+    }
+    
     public void ValidateCoords(int x, int y)
     {
-        if (!(x >= 0 && y >= 0 && x < Dimensions.Width && y < Dimensions.Height))
+        if (!CoordsAreValid(x, y))
             throw new ArgumentOutOfRangeException($"Received X:{x}, Y:{y} for matrix of Width:{Dimensions.Width}, Height:{Dimensions.Height}");
     }
 
@@ -65,6 +73,17 @@ public class Matrix<TData>
         }
 
         return transposedMatrix;
+    }
+
+    public TData[] Row(int y)
+    {
+        // TODO maybe smartly combine this into [int x, int y] some how?
+        return Enumerable.Range(0, Dimensions.Width).Select(x => this[x, y]).ToArray();
+    }
+
+    public TData[] GetColumn(int x)
+    {
+        return Enumerable.Range(0, Dimensions.Height).Select(y => this[x, y]).ToArray();
     }
 
     public void Draw()
@@ -99,5 +118,20 @@ public class Matrix<TData>
         }
         
         return outputMatrix;
+    }
+
+    public void DrawSquare(int x, int y, int radius)
+    {
+        ValidateCoords(x, y);
+
+        for (var u = x - radius; u < x + radius; u += 1)
+        {
+            for (var v = y - radius; v < y + radius; v += 1)
+            {
+                if (!CoordsAreValid(u, v))
+                    continue;
+                
+            }
+        }
     }
 }
