@@ -1,35 +1,40 @@
 namespace Images.Abstractions;
 
-public class Matrix<TData> where TData : class
+public class Matrix<TData>
 {
     // TODO maybe eventually allow for creation of N dimensional matrix?
     public MatrixDimensions Dimensions { get; }
 
-    private MatrixStorage<TData> storage;
+    private readonly MatrixStorage<TData> _storage;
 
     public Matrix(MatrixDimensions dimensions)
     {
         Dimensions = dimensions;
-        storage = new MatrixStorage<TData>(dimensions);
+        _storage = new MatrixStorage<TData>(dimensions);
     }
 
     internal Matrix(MatrixStorage<TData> storage)
     {
         Dimensions = storage.Dimensions;
-        this.storage = storage;
+        _storage = storage;
     }
 
-    // TODO maybe some of this should go into a Images project.
+    // TODO maybe some of this should go into a Matricies Project
+    
+    public static Matrix<TData> FromColMajorArray(TData[,] colMajorArray)
+    {
+        return new Matrix<TData>(MatrixStorage<TData>.FromColMajorArray(colMajorArray));
+    }
     
     public static Matrix<TData> FromRowMajorArray(TData[,] rowMajorArray)
     {
-        return new Matrix<TData>(MatrixStorage<TData>.FromColMajorArray(rowMajorArray));
+        return new Matrix<TData>(MatrixStorage<TData>.FromRowMajorArray(rowMajorArray));
     }
 
     public TData this[int x, int y]
     {
-        get => storage[x, y];
-        set => storage[x, y] = value;
+        get => _storage[x, y];
+        set => _storage[x, y] = value;
     }
 
     public bool CoordsAreValid(int x, int y)
@@ -61,12 +66,12 @@ public class Matrix<TData> where TData : class
 
     public TData[] Row(int y)
     {
-        return storage.Row(y);
+        return _storage.Row(y);
     }
 
     public TData[] GetColumn(int x)
     {
-        return storage.Column(x);
+        return _storage.Column(x);
     }
 
     public void Draw()
@@ -86,24 +91,24 @@ public class Matrix<TData> where TData : class
     }
 
 
-    public delegate TOutData PixelConverter<out TOutData>(TData dataIn); 
+    public delegate TOutData PixelConverter<out TOutData>(TData dataIn);
     public Matrix<TNewData> Convert<TNewData>(PixelConverter<TNewData> pixelConverter)
     {
         // TODO should create a generic map function that does this double for loop generation.
         var outputMatrix = new Matrix<TNewData>(Dimensions);
 
-        for (int x = 0; x < Dimensions.Width; x++)
+        for (var x = 0; x < Dimensions.Width; x++)
         {
-            for (int y = 0; y < Dimensions.Height; y++)
+            for (var y = 0; y < Dimensions.Height; y++)
             {
-                outputMatrix[x, y] = pixelConverter(_pixels[x, y]);
+                outputMatrix[x, y] = pixelConverter(_storage[x, y]);
             }
         }
         
         return outputMatrix;
     }
 
-    public void DrawSquare(int x, int y, int radius)
+    public void DrawSquare(int x, int y, int radius, TData dataToDraw)
     {
         ValidateCoords(x, y);
 
@@ -111,9 +116,7 @@ public class Matrix<TData> where TData : class
         {
             for (var v = y - radius; v < y + radius; v += 1)
             {
-                if (!CoordsAreValid(u, v))
-                    continue;
-                
+                _storage.SetOrDoNothing(u, v, dataToDraw);
             }
         }
     }

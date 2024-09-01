@@ -1,6 +1,6 @@
 namespace Images.Abstractions;
 
-public class MatrixStorage<TData> where TData : class
+public class MatrixStorage<TData>
 {
     public readonly MatrixDimensions Dimensions;
 
@@ -19,10 +19,10 @@ public class MatrixStorage<TData> where TData : class
         _data = data;
     }
 
-    public static MatrixStorage<TData> FromColMajorArray(TData[,] rowMajorArray)
+    public static MatrixStorage<TData> FromColMajorArray(TData[,] colMajorArray)
     {
-        var numCols = rowMajorArray.GetLength(0);
-        var numRows = rowMajorArray.GetLength(1);
+        var numCols = colMajorArray.GetLength(0);
+        var numRows = colMajorArray.GetLength(1);
 
         var data = new TData[(long)numRows * numCols];
         var dimensions = new MatrixDimensions(numCols, numRows);
@@ -32,7 +32,27 @@ public class MatrixStorage<TData> where TData : class
             var offset = row * dimensions.Width;
             for (var col = 0; col < numCols; col++)
             {
-                data[offset + col] = rowMajorArray[col, row];
+                data[offset + col] = colMajorArray[col, row];
+            }
+        }
+
+        return new MatrixStorage<TData>(dimensions, data);
+    }
+    
+    public static MatrixStorage<TData> FromRowMajorArray(TData[,] rowMajorArray)
+    {
+        var numRows = rowMajorArray.GetLength(0);
+        var numCols = rowMajorArray.GetLength(1);
+
+        var data = new TData[(long)numRows * numCols];
+        var dimensions = new MatrixDimensions(numCols, numRows);
+
+        for (var row = 0; row < numRows; row++)
+        {
+            var offset = row * dimensions.Width;
+            for (var col = 0; col < numCols; col++)
+            {
+                data[offset + col] = rowMajorArray[row, col];
             }
         }
 
@@ -55,7 +75,14 @@ public class MatrixStorage<TData> where TData : class
 
     public TData? GetOrNull(int x, int y)
     {
-        return !CoordsAreValid(x, y) ? null : GetWithoutValidation(x, y);
+        // TODO note that if this is reference type, the value will be the default value.
+        return !CoordsAreValid(x, y) ? default : GetWithoutValidation(x, y);
+    }
+
+    public void SetOrDoNothing(int x, int y, TData data)
+    {
+        if (CoordsAreValid(x, y))
+            SetWithoutValidation(x, y, data);
     }
 
     private TData GetWithoutValidation(int x, int y)

@@ -55,14 +55,17 @@ public class Program
         // TODO note this conversion ignores `a`
         var bwImage = inputImage.Convert(Grayscale.FromRgba);
         var keypoints = keypointDetector.Detect(bwImage);
+        // TODO there are better ways to store these points. Maybe with spatial hashing?
 
         Console.WriteLine($"Elapsed while detecting keypoints: Initialize: {initializeTime}, Detecting: {swNoIo.Elapsed}");
         Console.WriteLine($"Found: {keypoints.Count} key points");
+
+        foreach (var keypoint in keypoints)
+        {
+            inputImage.DrawSquare(keypoint.Coordinate.X, keypoint.Coordinate.Y,
+                45, new Rgba { A = 127, B = 255, G = 0, R = 0 });
+        }
         
-        // for(var i = 0; i < keypoints.Count; i++)
-        // {
-        //     var keypoint = keypoints[i];
-        //     Console.WriteLine($"({i}) X: {keypoint.X}, Y: {keypoint.Y}");
-        // }
+        
     }
 }

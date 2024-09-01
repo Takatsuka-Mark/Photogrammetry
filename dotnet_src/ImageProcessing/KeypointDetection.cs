@@ -11,9 +11,14 @@ public class KeypointDetection
     private readonly float _threshold;
 
     // TODO determine if there's a better way to store this
-    // TODO dynamically create these?
-    private readonly Matrix<int> _bresenhamCircle3 = Matrix<int>.FromArray(new[,]{{-3, 0}, {-3, 1}, {-2, 2}, {-1, 3}, {0, 3}, {1, 3}, {2, 2}, {3, 1}, {3, 0}, {3, -1}, {2, -2}, {1, -3}, {0, -3}, {-1, -3}, {-2, -2}, {-3, 1}});
-    private readonly Matrix<int> _miniBresenhamCircle3 = Matrix<int>.FromArray(new[,] { { -3, 0 }, {0 , 3}, {3,0}, {0, -3} });
+    private readonly Matrix<int> _bresenhamCircle3 = Matrix<int>.FromRowMajorArray(new[,]
+    {
+        { -3, 0 }, { -3, 1 }, { -2, 2 }, { -1, 3 }, { 0, 3 }, { 1, 3 }, { 2, 2 }, { 3, 1 }, { 3, 0 }, { 3, -1 },
+        { 2, -2 }, { 1, -3 }, { 0, -3 }, { -1, -3 }, { -2, -2 }, { -3, 1 }
+    });
+
+    private readonly Matrix<int> _miniBresenhamCircle3 =
+        Matrix<int>.FromRowMajorArray(new[,] { { -3, 0 }, { 0, 3 }, { 3, 0 }, { 0, -3 } });
     private readonly Matrix<int> _bresenhamCircle3T;
     private readonly Matrix<int> _miniBresenhamCircle3T;
     private readonly List<(Coordinate, Coordinate)> _gaussianKeypairs;
