@@ -52,7 +52,12 @@ public class Keypoint
 
     public static Grayscale GetValueAtCoordinate(Coordinate testCoordinate, Matrix<Grayscale> image)
     {
-        // TODO move this into image?
+        // TODO move this into image? Also why is the image stored on the keypoint itself... Seems like the keypoint should just be a coord with extra properties.
         return image[testCoordinate.X, testCoordinate.Y];
+    }
+
+    public override string ToString()
+    {
+        return $"({Coordinate.X}, {Coordinate.Y})";
     }
 }

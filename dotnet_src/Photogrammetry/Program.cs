@@ -20,9 +20,14 @@ public class Program
         // imageReader.WriteImageToDirectory(result, "output");
 
         // Keypoint Detection Tests
-        var image = imageReader.ReadImageFromDirectory("15pt_star.png");
-        TestKeypointDetection(image);
+        // var image = imageReader.ReadImageFromDirectory("15pt_star.png");
+        // TestKeypointDetection(image);
 
+        // Keypoint Mathcing Tests
+        var image1 = imageReader.ReadImageFromDirectory("15pt_star.png");
+        var image2 = imageReader.ReadImageFromDirectory("15pt_star_shifted_150.png");
+        TestKeypointMatching(image1, image2);
+        
         
         Console.WriteLine($"Elapsed: {sw.Elapsed}");
     }
@@ -69,5 +74,27 @@ public class Program
         // TODO probably change the name of this image reader...
         var imageReader = new LocalImageReader();
         imageReader.WriteImageToDirectory(inputImage, "dotnet_keypoints");
+    }
+
+    public static void TestKeypointMatching(Matrix<Rgba> inputImage1, Matrix<Rgba> inputImage2)
+    {
+        var swNoIo = new Stopwatch();
+        swNoIo.Start();
+
+        var keypointDetector = new KeypointDetection(0.5f, 50, 256);
+        
+        var bwImage1 = inputImage1.Convert(Grayscale.FromRgba);
+        var keypoints1 = keypointDetector.Detect(bwImage1);
+
+        var bwImage2 = inputImage2.Convert(Grayscale.FromRgba);
+        var keypoints2 = keypointDetector.Detect(bwImage2);
+
+        var keypointMatching = new KeypointMatching(100);
+        var matchedPairs = keypointMatching.MatchKeypoints(keypoints1, keypoints2);
+
+        foreach (var keypointPair in matchedPairs)
+        {
+            Console.WriteLine($"Keypoint1: {keypointPair.Keypoint1}, keypoint2: {keypointPair.Keypoint2}");
+        }
     }
 }

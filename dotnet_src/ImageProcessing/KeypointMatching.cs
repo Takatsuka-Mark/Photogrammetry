@@ -16,6 +16,7 @@ public class KeypointMatching
 
     public List<KeypointPair> MatchKeypoints(List<Keypoint> keypoints1, List<Keypoint> keypoints2)
     {
+        // TODO introduce hamming distance.
         var k1ToK2ToDistance = new Dictionary<int, Dictionary<int, int>>();
         // var k1ToK2ToDistance = new Matrix<int>(new MatrixDimensions(keypoints1.Count, keypoints2.Count));
         
