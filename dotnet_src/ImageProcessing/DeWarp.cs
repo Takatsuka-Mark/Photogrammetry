@@ -13,7 +13,6 @@ public class DeWarp
     public DeWarp(MatrixDimensions dimensions)
     {
         _dimensions = dimensions;
-        
     }
 
     public static Matrix<TPixel> ApplyDistortionMat<TPixel>(Matrix<TPixel> image, DistortionMatrix distortionMatrix)

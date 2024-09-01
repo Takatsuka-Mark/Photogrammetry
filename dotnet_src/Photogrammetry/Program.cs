@@ -63,9 +63,11 @@ public class Program
         foreach (var keypoint in keypoints)
         {
             inputImage.DrawSquare(keypoint.Coordinate.X, keypoint.Coordinate.Y,
-                45, new Rgba { A = 127, B = 255, G = 0, R = 0 });
+                5, new Rgba { A = 127, B = 255, G = 0, R = 0 });
         }
-        
-        
+
+        // TODO probably change the name of this image reader...
+        var imageReader = new LocalImageReader();
+        imageReader.WriteImageToDirectory(inputImage, "dotnet_keypoints");
     }
 }
