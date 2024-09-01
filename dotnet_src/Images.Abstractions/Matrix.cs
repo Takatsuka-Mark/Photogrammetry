@@ -1,52 +1,35 @@
 namespace Images.Abstractions;
 
-public class Matrix<TData>
+public class Matrix<TData> where TData : class
 {
     // TODO maybe eventually allow for creation of N dimensional matrix?
     public MatrixDimensions Dimensions { get; }
 
-    // TODO possibly a better way to store this under the hoold...
-    private readonly TData[,] _pixels;
+    private MatrixStorage<TData> storage;
 
     public Matrix(MatrixDimensions dimensions)
     {
         Dimensions = dimensions;
-        _pixels = new TData[dimensions.Width, dimensions.Height];
+        storage = new MatrixStorage<TData>(dimensions);
+    }
+
+    internal Matrix(MatrixStorage<TData> storage)
+    {
+        Dimensions = storage.Dimensions;
+        this.storage = storage;
     }
 
     // TODO maybe some of this should go into a Images project.
     
-    public static Matrix<TData> FromArray(TData[,] data)
+    public static Matrix<TData> FromRowMajorArray(TData[,] rowMajorArray)
     {
-        var numRows = data.GetLength(0);
-        var numCols = data.GetLength(1);
-
-        var resultMatrix = new Matrix<TData>(new MatrixDimensions(numCols, numRows));
-
-        for (int row = 0; row < numRows; row++)
-        {
-            for (int col = 0; col < numCols; col++)
-            {
-                resultMatrix[col, row] = data[row, col];
-            }
-        }
-        
-        return resultMatrix;
+        return new Matrix<TData>(MatrixStorage<TData>.FromColMajorArray(rowMajorArray));
     }
 
     public TData this[int x, int y]
     {
-        // TODO maybe just rename these all to dim 0 and dim 1
-        get
-        {
-            ValidateCoords(x, y);
-            return _pixels[x, y];
-        }
-        set
-        {
-            ValidateCoords(x, y);
-            _pixels[x, y] = value;
-        }
+        get => storage[x, y];
+        set => storage[x, y] = value;
     }
 
     public bool CoordsAreValid(int x, int y)
@@ -62,11 +45,12 @@ public class Matrix<TData>
 
     public Matrix<TData> Transpose()
     {
+        // TODO should probably build a way to do this without checks.
         var transposedMatrix = new Matrix<TData>(new MatrixDimensions(Dimensions.Height, Dimensions.Width));
 
-        for (int y = 0; y < Dimensions.Height; y++)
+        for (var y = 0; y < Dimensions.Height; y++)
         {
-            for (int x = 0; x < Dimensions.Width; x++)
+            for (var x = 0; x < Dimensions.Width; x++)
             {
                 transposedMatrix[y, x] = this[x, y];
             }
@@ -77,13 +61,12 @@ public class Matrix<TData>
 
     public TData[] Row(int y)
     {
-        // TODO maybe smartly combine this into [int x, int y] some how?
-        return Enumerable.Range(0, Dimensions.Width).Select(x => this[x, y]).ToArray();
+        return storage.Row(y);
     }
 
     public TData[] GetColumn(int x)
     {
-        return Enumerable.Range(0, Dimensions.Height).Select(y => this[x, y]).ToArray();
+        return storage.Column(x);
     }
 
     public void Draw()
