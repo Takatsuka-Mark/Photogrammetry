@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace Images.Abstractions;
 
 public class Matrix<TData>
@@ -119,5 +121,12 @@ public class Matrix<TData>
                 _storage.SetOrDoNothing(u, v, dataToDraw);
             }
         }
+    }
+
+    public void DrawLine(int x1, int y1, int x2, int y2, TData dataToDraw)
+    {
+        var dx = x2 - x1;
+        var dy = y2 - y1;
+        var m = dy / dx;
     }
 }
