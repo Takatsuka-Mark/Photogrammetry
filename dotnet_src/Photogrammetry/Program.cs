@@ -25,8 +25,11 @@ public class Program
 
         // Keypoint Mathcing Tests
         var image1 = imageReader.ReadImageFromDirectory("15pt_star.png");
-        var image2 = imageReader.ReadImageFromDirectory("15pt_star_shifted_150.png");
-        TestKeypointMatching(image1, image2);
+        // var image2 = imageReader.ReadImageFromDirectory("15pt_star_shifted_150.png");
+        // TestKeypointMatching(image1, image2);
+
+        image1.DrawLine(new Coordinate{X = 10, Y = 10}, new Coordinate{Y = 300, X = 11}, new Rgba{R = 100, A = 255});
+        imageReader.WriteImageToDirectory(image1, "test_line");
         
         
         Console.WriteLine($"Elapsed: {sw.Elapsed}");

@@ -1,6 +1,4 @@
-using Images.Abstractions;
-
-namespace ImageProcessing.Abstractions;
+namespace Images.Abstractions;
 
 public class Coordinate
 {

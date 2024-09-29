@@ -1,0 +1,11 @@
+{
+    "profiles": {
+        "FeatureMatching": {
+            "commandName": "Project",
+            "environmentVariables": {
+                "image_reader:root_directory": "../data/feature_matching_test",
+                "image_reader:root_output_directory": "../data/feature_matching_test/output"
+            }
+        }
+    }
+}

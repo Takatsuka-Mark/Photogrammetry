@@ -1,4 +1,6 @@
 using System.ComponentModel.DataAnnotations;
+using System.Security.AccessControl;
+using System.Security.Cryptography.X509Certificates;
 
 namespace Images.Abstractions;
 
@@ -123,10 +125,38 @@ public class Matrix<TData>
         }
     }
 
-    public void DrawLine(int x1, int y1, int x2, int y2, TData dataToDraw)
+    public void DrawLine(Coordinate p1, Coordinate p2, TData dataToDraw)
     {
-        var dx = x2 - x1;
-        var dy = y2 - y1;
-        var m = dy / dx;
+        // Using bresehnam's line drawer
+        ValidateCoords(p1.X, p1.Y);
+        ValidateCoords(p2.X, p2.Y);
+
+        var dx = Math.Abs(p2.X - p1.X);
+        var dy = Math.Abs(p2.Y - p1.Y);
+        var sx = p1.X < p2.X ? 1 : -1;
+        var sy = p1.Y < p2.Y ? 1 : -1;
+        var err = dx - dy;
+
+        var x = p1.X;
+        var y = p1.Y;
+
+        // TODO Kinda scary to have a while(true)
+        while (true){
+            _storage.SetOrDoNothing(x, y, dataToDraw);
+
+            if (x == p2.X && y == p2.Y)
+                break;
+
+            var err2 = 2 * err;
+
+            if (err2 >= -dy){
+                err -= dy;
+                x += sx;
+            }
+            if (err2 <= dx){
+                err += dx;
+                y += sy;
+            }
+        }
     }
 }
