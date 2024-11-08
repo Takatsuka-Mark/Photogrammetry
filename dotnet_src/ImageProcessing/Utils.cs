@@ -46,4 +46,8 @@ public class Utils
             Y = Math.Max(Math.Min(coordinate.Y, clampDimensions.Height - 1), 0)
         };
     }
+
+    public static double CoordinateDistance(Coordinate c1, Coordinate c2){
+        return Math.Sqrt(Math.Pow(c2.X - c1.X, 2) + Math.Pow(c2.Y - c1.Y, 2));
+    }
 }

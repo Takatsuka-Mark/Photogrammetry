@@ -9,14 +9,17 @@ public class Keypoint
 {
     private readonly int _imageId;
     public readonly Coordinate Coordinate;
+    public readonly int FastScore;
     public readonly BigInteger BriefDescriptor;
 
-    public Keypoint(int imageId, int x, int y, List<(Coordinate, Coordinate)> guassianKeyPairs, Matrix<Grayscale> image)
+    public Keypoint(int imageId, Coordinate coordinate, List<(Coordinate, Coordinate)> guassianKeyPairs, Matrix<Grayscale> image, int fastScore)
     {
         _imageId = imageId;
-        Coordinate = new Coordinate { X = x, Y = y };
-        
+        Coordinate = coordinate;
+        FastScore = fastScore;
+
         // TODO determine a less clunky way to create the brief descriptor. Like don't pass all this into the constructor
+        // TODO the brief descriptor should just be requested when needed. Or be a superclass of this like "keypoint with brief". Or myabe some form of metadata.
         BriefDescriptor = GetBriefDescriptor(Coordinate, guassianKeyPairs, image);
     }
 
