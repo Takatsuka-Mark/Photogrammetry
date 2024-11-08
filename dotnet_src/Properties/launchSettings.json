@@ -6,6 +6,13 @@
                 "image_reader:root_directory": "../data/feature_matching_test",
                 "image_reader:root_output_directory": "../data/feature_matching_test/output"
             }
+        },
+        "FeatureDetection": {
+            "commandName": "Project",
+            "environmentVariables": {
+                "image_reader:root_directory": "../data/feature_detection_test",
+                "image_reader:root_output_directory": "../data/feature_detection_test/output"
+            }
         }
     }
 }

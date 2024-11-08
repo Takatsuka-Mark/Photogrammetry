@@ -3,6 +3,7 @@ using Images.Abstractions;
 using SixLabors.ImageSharp.PixelFormats;
 using Images.Abstractions.Pixels;
 using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Formats;
 
 
 namespace ImageReader.LocalImageReader;
@@ -19,7 +20,7 @@ public class LocalImageReader
     public Images.Abstractions.Matrix<Rgba> ReadImageFromDirectory(string filename)
     {
 
-        var rawImage = Image.Load<Rgba64>($"{_options.RootDirectory}/{filename}");
+        var rawImage = Image.Load<Rgba64>(new DecoderOptions{SkipMetadata = false}, $"{_options.RootDirectory}/{filename}");
         var myImage = new Images.Abstractions.Matrix<Rgba>(new MatrixDimensions(rawImage.Width, rawImage.Height));
         
         for (var x = 0; x < rawImage.Width; x++)
@@ -36,6 +37,10 @@ public class LocalImageReader
                 };
             }
         }
+
+        // TODO this is a bigtime hack.
+        if (filename.EndsWith(".jpg"))
+            return myImage.Transpose();
 
         return myImage;
     }
