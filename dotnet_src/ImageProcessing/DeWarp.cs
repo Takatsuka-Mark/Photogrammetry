@@ -13,7 +13,6 @@ public class DeWarp
     public DeWarp(MatrixDimensions dimensions)
     {
         _dimensions = dimensions;
-        
     }
 
     public static Matrix<TPixel> ApplyDistortionMat<TPixel>(Matrix<TPixel> image, DistortionMatrix distortionMatrix)
@@ -26,7 +25,7 @@ public class DeWarp
 
         for (var x = 0; x < image.Dimensions.Width; x++)
         {
-            for (int y = 0; y < image.Dimensions.Height; y++)
+            for (var y = 0; y < image.Dimensions.Height; y++)
             {
                 var newPixel = distortionMatrix[x, y];
                 resultImage[x, y] = image[newPixel.U, newPixel.V];

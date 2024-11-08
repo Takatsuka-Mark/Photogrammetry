@@ -7,19 +7,13 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Photogrammetry", "Photogram
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ImageReader.Abstractions", "ImageReader.Abstractions\ImageReader.Abstractions.csproj", "{4BA41A99-BB6F-463F-B212-760DEF0E4008}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ImageReader", "ImageReader", "{C6D721A8-2B64-4F12-9831-478442866DCD}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ImageReader.LocalImageReader", "ImageReader.LocalImageReader\ImageReader.LocalImageReader.csproj", "{0BC3C1E9-6004-4232-B01D-1D03EF788638}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Images", "Images", "{783772D1-84CB-4612-9780-2EF18E7FF23F}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Images.Abstractions", "Images.Abstractions\Images.Abstractions.csproj", "{D3BE5DCA-5270-485C-A47B-18B6D161D7C3}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ImageProcessing", "ImageProcessing\ImageProcessing.csproj", "{4EDD22A0-297B-4A6C-B4AD-A159F111A896}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ImageProcessing.Abstractions", "ImageProcessing.Abstractions\ImageProcessing.Abstractions.csproj", "{634C93DA-A176-4433-92D6-D09582AADA58}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ImageProcessing", "ImageProcessing", "{7347073E-CCB1-4318-B185-8EC1639D32F3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -56,10 +50,5 @@ Global
 		{634C93DA-A176-4433-92D6-D09582AADA58}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
-		{4BA41A99-BB6F-463F-B212-760DEF0E4008} = {C6D721A8-2B64-4F12-9831-478442866DCD}
-		{0BC3C1E9-6004-4232-B01D-1D03EF788638} = {C6D721A8-2B64-4F12-9831-478442866DCD}
-		{D3BE5DCA-5270-485C-A47B-18B6D161D7C3} = {783772D1-84CB-4612-9780-2EF18E7FF23F}
-		{4EDD22A0-297B-4A6C-B4AD-A159F111A896} = {7347073E-CCB1-4318-B185-8EC1639D32F3}
-		{634C93DA-A176-4433-92D6-D09582AADA58} = {7347073E-CCB1-4318-B185-8EC1639D32F3}
 	EndGlobalSection
 EndGlobal

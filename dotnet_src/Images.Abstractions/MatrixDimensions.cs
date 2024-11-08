@@ -4,6 +4,7 @@ public class MatrixDimensions
 {
     public MatrixDimensions(int width, int height)
     {
+        // TODO maybe just rename these all to dim 0 and dim 1
         Width = width;
         Height = height;
     }
