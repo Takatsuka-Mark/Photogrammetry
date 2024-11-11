@@ -11,6 +11,7 @@ public class Keypoint
     public readonly Coordinate Coordinate;
     public readonly int FastScore;
     public readonly BigInteger BriefDescriptor;
+    public Grayscale Value { get; init; }
 
     public Keypoint(int imageId, Coordinate coordinate, List<(Coordinate, Coordinate)> guassianKeyPairs, Matrix<Grayscale> image, int fastScore)
     {
@@ -21,6 +22,7 @@ public class Keypoint
         // TODO determine a less clunky way to create the brief descriptor. Like don't pass all this into the constructor
         // TODO the brief descriptor should just be requested when needed. Or be a superclass of this like "keypoint with brief". Or myabe some form of metadata.
         BriefDescriptor = GetBriefDescriptor(Coordinate, guassianKeyPairs, image);
+        Value = image[Coordinate.X, Coordinate.Y];
     }
 
     public static BigInteger GetBriefDescriptor(Coordinate coordinate, List<(Coordinate, Coordinate)> gaussianKeyPairs, Matrix<Grayscale> image)
@@ -57,6 +59,11 @@ public class Keypoint
     {
         // TODO move this into image? Also why is the image stored on the keypoint itself... Seems like the keypoint should just be a coord with extra properties.
         return image[testCoordinate.X, testCoordinate.Y];
+    }
+
+    public Grayscale GetValue()
+    {
+        return
     }
 
     public override string ToString()
