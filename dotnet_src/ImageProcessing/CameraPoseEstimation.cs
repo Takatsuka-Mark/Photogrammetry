@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Security.Cryptography.X509Certificates;
 using ImageProcessing.Abstractions;
 using Images.Abstractions;
@@ -27,7 +28,7 @@ public class CameraPoseEstimation
     }
 
 
-    public List<KeypointPair> OutlierRejection(IList<KeypointPair> keypointPairs, int numSamples, int numPairsPerSample, float threshold)
+    public (List<KeypointPair> Samples, MathNet.Numerics.LinearAlgebra.Matrix<float> FundamentalMatrix) GetFundamentalMatrix(IList<KeypointPair> keypointPairs, int numSamples, int numPairsPerSample, float threshold)
     {
         if (numPairsPerSample < 8)
             throw new InvalidOperationException("At least 8 keypoint pairs must be included per sample");
@@ -38,6 +39,7 @@ public class CameraPoseEstimation
         // See https://cmsc426.github.io/sfm/#featmatch for ransac impl
         var random = new Random();
         var bestSample = new List<KeypointPair>();
+        MathNet.Numerics.LinearAlgebra.Matrix<float>? bestF = null;
         for (var sampleIdx = 0; sampleIdx < numSamples; sampleIdx += 1)
         {
 
@@ -50,7 +52,9 @@ public class CameraPoseEstimation
             {
                 var kp1Mat = MathNet.Numerics.LinearAlgebra.Matrix<float>.Build.DenseOfRowMajor(3, 1, new List<float>() { keypointPair.Keypoint2.Coordinate.X, keypointPair.Keypoint2.Coordinate.Y, 1 });    // TODO if needed for perf (and not clarity), just build transposed.
                 var kp2Mat = MathNet.Numerics.LinearAlgebra.Matrix<float>.Build.DenseOfRowMajor(3, 1, new List<float>() { keypointPair.Keypoint1.Coordinate.X, keypointPair.Keypoint1.Coordinate.Y, 1 });
-                if (kp2Mat.Transpose().Multiply(f.Multiply(kp1Mat))[0, 0] <= threshold) // TODO validate multiplication order
+                var result = f.Multiply(kp1Mat);
+                var result2 = kp2Mat.Transpose().Multiply(result);
+                if (result2[0, 0] <= threshold) // TODO validate multiplication order
                 {
                     workingPairs.Add(keypointPair);
                 }
@@ -63,7 +67,9 @@ public class CameraPoseEstimation
             }
         }
 
-        return bestSample;
+        if (bestF is null)
+            throw new Exception("Failed computing the best fundamental matrix");
+        return (bestSample, bestF);
     }
 
     internal MathNet.Numerics.LinearAlgebra.Matrix<float> EstimateFundamentalMatrix(IList<KeypointPair> keypointPairs)

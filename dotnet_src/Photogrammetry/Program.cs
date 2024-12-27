@@ -35,10 +35,18 @@ public class Program
         // imageReader.WriteImageToDirectory(image1, "test_line");
 
         // var image = imageReader.ReadImageFromDirectory("15pt_star.png");
-        var image = imageReader.ReadImageFromDirectory("lego_space_1_from_left.jpg");
-        TestRedundantKeypointElimination(image);
+        // var image = imageReader.ReadImageFromDirectory("lego_space_1_from_left.jpg");
+        // TestRedundantKeypointElimination(image);
         // System.Console.WriteLine(image.Dimensions.Width);
         // System.Console.WriteLine(image.Dimensions.Height);
+
+        // var image1 = imageReader.ReadImageFromDirectory("15pt_star.png");
+        // var image2 = imageReader.ReadImageFromDirectory("15pt_star_shifted_150.png");
+        // TestKeypointMatching(image1, image2);
+
+        var image1 = imageReader.ReadImageFromDirectory("15pt_star.png");
+        var image2 = imageReader.ReadImageFromDirectory("15pt_star_shifted_150.png");
+        EstimateCameraPose(image1, image2);
 
         Console.WriteLine($"Elapsed: {sw.Elapsed}");
     }
@@ -172,5 +180,27 @@ public class Program
 
         var imageReader = new LocalImageReader();
         imageReader.WriteImageToDirectory(outputImage, "dotnet_paired_keypoints");
+    }
+
+    public static void EstimateCameraPose(Matrix<Rgba> inputImage1, Matrix<Rgba> inputImage2)
+    {
+        var swNoIo = new Stopwatch();
+        swNoIo.Start();
+
+        var keypointDetector = new KeypointDetection(0.2f, 50, 256);
+        var rke = new RedundantKeypointEliminator((int)(inputImage1.Dimensions.Width * 0.015f));
+
+        var bwImage1 = inputImage1.Convert(Grayscale.FromRgba);
+        var keypoints1 = rke.EliminateRedundantKeypoints(keypointDetector.Detect(bwImage1));
+
+        var bwImage2 = inputImage2.Convert(Grayscale.FromRgba);
+        var keypoints2 = rke.EliminateRedundantKeypoints(keypointDetector.Detect(bwImage2));
+
+        var keypointMatching = new KeypointMatching(100);
+        var matchedPairs = keypointMatching.MatchKeypoints(keypoints1, keypoints2);
+
+        var cpe = new CameraPoseEstimation();
+
+        var (samples, fundamentalMatrix) = cpe.GetFundamentalMatrix(matchedPairs, 100, 8, 0.1f);
     }
 }

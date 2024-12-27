@@ -63,7 +63,7 @@ public class Keypoint
 
     public Grayscale GetValue()
     {
-        return
+        return Value;
     }
 
     public override string ToString()
