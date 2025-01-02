@@ -4,6 +4,7 @@ using ImageProcessing;
 using ImageReader.LocalImageReader;
 using Images.Abstractions;
 using Images.Abstractions.Pixels;
+using ScottPlot;
 
 namespace Photogrammetry;
 
@@ -44,8 +45,10 @@ public class Program
         // var image2 = imageReader.ReadImageFromDirectory("15pt_star_shifted_150.png");
         // TestKeypointMatching(image1, image2);
 
-        var image1 = imageReader.ReadImageFromDirectory("15pt_star.png");
-        var image2 = imageReader.ReadImageFromDirectory("15pt_star_shifted_150.png");
+        // var image1 = imageReader.ReadImageFromDirectory("15pt_star.png");
+        // var image2 = imageReader.ReadImageFromDirectory("15pt_star_shifted_150.png");
+        var image1 = imageReader.ReadImageFromDirectory("lego_space_1_from_left.jpg");
+        var image2 = imageReader.ReadImageFromDirectory("lego_space_1_from_right.jpg");
         EstimateCameraPose(image1, image2);
 
         Console.WriteLine($"Elapsed: {sw.Elapsed}");
@@ -196,11 +199,15 @@ public class Program
         var bwImage2 = inputImage2.Convert(Grayscale.FromRgba);
         var keypoints2 = rke.EliminateRedundantKeypoints(keypointDetector.Detect(bwImage2));
 
+        System.Console.WriteLine($"Found {keypoints1.Count} keypoints from Image 1");
+        System.Console.WriteLine($"Found {keypoints2.Count} keypoints from Image 2");
+
         var keypointMatching = new KeypointMatching(100);
         var matchedPairs = keypointMatching.MatchKeypoints(keypoints1, keypoints2);
 
         var cpe = new CameraPoseEstimation();
 
         var (samples, fundamentalMatrix) = cpe.GetFundamentalMatrix(matchedPairs, 100, 8, 0.1f);
+        cpe.EstimateCameraPose(samples, fundamentalMatrix);
     }
 }
