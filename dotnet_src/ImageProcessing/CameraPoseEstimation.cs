@@ -81,50 +81,37 @@ public class CameraPoseEstimation
         var R1 = svdResults.U.Multiply(W).Multiply(svdResults.VT);
         var R2 = svdResults.U.Multiply(W.Transpose()).Multiply(svdResults.VT);
 
-        // TODO this doesn't always hit? Idk why it's not consistent.
-        if (R1.Determinant() == -1 || R2.Determinant() == -1){
-            // throw new Exception("Need to do some determinant stuff");
-            System.Console.WriteLine("Need to do some determinant stuff");
-        }
-
         var U1 = svdResults.U.Column(2);
         var U2 = U1 * -1;
         var candidates = new List<(MathNet.Numerics.LinearAlgebra.Vector<float> U, MathNet.Numerics.LinearAlgebra.Matrix<float> R)>(){
-            (U1, R1),
-            (U2, R1),
-            (U1, R2),
-            (U2, R2)
+            (U1 * R1.Determinant(), R1 * R1.Determinant()),
+            (U2 * R1.Determinant(), R1 * R1.Determinant()),
+            (U1 * R2.Determinant(), R2 * R2.Determinant()),
+            (U2 * R2.Determinant(), R2 * R2.Determinant())
         };
 
-        var i = 0;
         System.Console.WriteLine($"Found {keypointPairs.Count} keypoint pairs");
         
-        // (MathNet.Numerics.LinearAlgebra.Vector<float> U, MathNet.Numerics.LinearAlgebra.Matrix<float> R)? bestCandidate = null;
         // var mostPositiveDepths = 0;
         var numPositiveDepths = new int[4];
+        var pointLists = new List<MathNet.Numerics.LinearAlgebra.Vector<float>>[4];
 
+        var i = 0;
         foreach(var (U, R) in candidates){
             
+            var pointList = new List<MathNet.Numerics.LinearAlgebra.Vector<float>>();
+
             // var r3 = R.Row(2).ToColumnMatrix();
 
             var plt = new ScottPlot.Plot();
             var P1 = MathNet.Numerics.LinearAlgebra.Matrix<float>.Build.DenseIdentity(3).InsertColumn(3, MathNet.Numerics.LinearAlgebra.Matrix<float>.Build.Dense(3, 1).Column(0));
             var P2 = R.InsertColumn(3, U);
 
+            System.Console.WriteLine(U.L2Norm());
+
             foreach(var keypointPair in keypointPairs){
                 // U ~ C ~ Camera Center
                 // R ~ t ~ Rotation matrix
-                // var depth = r3.Multiply(
-                //     MathNet.Numerics.LinearAlgebra.Matrix<float>.Build
-                //         .DenseOfRowMajor(3, 1, new List<float>(){keypointPair.Keypoint2.Coordinate.X, keypointPair.Keypoint2.Coordinate.Y, 1})
-                //         .Subtract(U.ToRowMatrix()));
-
-                // TODO I think I'm using the wrong point X
-                // var result = R.Multiply(
-                //     MathNet.Numerics.LinearAlgebra.Matrix<float>.Build
-                //         .DenseOfRowMajor(3, 1, new List<float>(){keypointPair.Keypoint2.Coordinate.X, keypointPair.Keypoint2.Coordinate.Y, 1})
-                //         .Subtract(U.ToColumnMatrix()));
-
 
                 var D = MathNet.Numerics.LinearAlgebra.Matrix<float>.Build
                         .DenseOfRowMajor(4, 4, new List<List<float>>(){
@@ -137,32 +124,30 @@ public class CameraPoseEstimation
                 var newSvdResults = D.Svd();
                 var X = newSvdResults.VT.Transpose().Column(3);
 
-                var scaledX = MathNet.Numerics.LinearAlgebra.Vector<float>.Build.DenseOfEnumerable(X.Take(3).Select(v => v * X[3]).ToList());
+                var scaledX = MathNet.Numerics.LinearAlgebra.Vector<float>.Build.DenseOfEnumerable(X.Take(3).Select(v => v / X[3]).ToList());
+                var point3d = R.Multiply(scaledX) + U;
 
-                var point1 = scaledX;
-                var point2 = R.Multiply(scaledX) + U;
+                plt.Add.ScatterPoints(new List<float>(){point3d[0]}, [point3d[2]], ScottPlot.Colors.Blue);
+                plt.Add.ScatterPoints(new List<float>(){point3d[1]}, [point3d[2]], ScottPlot.Colors.Red);
 
-                
-                plt.Add.ScatterPoints(new List<float>(){point1[0]}, [point1[2]], ScottPlot.Colors.Red);
-                plt.Add.ScatterPoints(new List<float>(){point2[0]}, [point2[2]], ScottPlot.Colors.Blue);
+                pointList.Add(point3d);
 
-                if (point1[2] >= 0 && point2[2] >= 0)
+                if (point3d[2] >= 0){
                     numPositiveDepths[i] += 1;
+                }
             }
 
-            plt.Save($"Test{i}.png", 800, 600);
+            pointLists[i] = pointList;
+
+            plt.SavePng($"Test{i}.png", 800, 600);
             i += 1;
         }
 
         System.Console.WriteLine(String.Join(", ", numPositiveDepths));
-    }
 
-    public void Plot(){
-        var plt = new ScottPlot.Plot();
-        double [] xs = {1, 2, 3, 4, 5};
-        double [] ys = {1, 4, 9, 16, 25};
-        plt.Add.ScatterPoints(xs, ys);
-        plt.SavePng("test.png", 800, 600);
+        var bestPositiveDepthIdx = numPositiveDepths.ToList().IndexOf(numPositiveDepths.Max());
+        System.Console.WriteLine(bestPositiveDepthIdx);
+        Utils.CreatePointCloud("test.ply", pointLists[bestPositiveDepthIdx]);
     }
 
     internal MathNet.Numerics.LinearAlgebra.Matrix<float> EstimateFundamentalMatrix(IList<KeypointPair> keypointPairs)
