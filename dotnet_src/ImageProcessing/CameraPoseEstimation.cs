@@ -47,13 +47,24 @@ public class CameraPoseEstimation
 
             foreach (var keypointPair in keypointPairs)
             {
-                var kp1Mat = MathNet.Numerics.LinearAlgebra.Matrix<float>.Build.DenseOfRowMajor(
-                    3, 1, new List<float>() { keypointPair.Keypoint2.Coordinate.X, keypointPair.Keypoint2.Coordinate.Y, 1 });    // TODO if needed for perf (and not clarity), just build transposed.
-                var kp2Mat = MathNet.Numerics.LinearAlgebra.Matrix<float>.Build.DenseOfRowMajor(
-                    3, 1, new List<float>() { keypointPair.Keypoint1.Coordinate.X, keypointPair.Keypoint1.Coordinate.Y, 1 });
-                var result = f.Multiply(kp1Mat);
-                var result2 = kp2Mat.Transpose().Multiply(result);
-                if (result2[0, 0] <= threshold) // TODO validate multiplication order
+                // var kp1Mat = MathNet.Numerics.LinearAlgebra.Matrix<float>.Build.DenseOfRowMajor(
+                //     3, 1, new List<float>() { keypointPair.Keypoint2.Coordinate.X, keypointPair.Keypoint2.Coordinate.Y, 1 });    // TODO if needed for perf (and not clarity), just build transposed.
+                // var kp2Mat = MathNet.Numerics.LinearAlgebra.Matrix<float>.Build.DenseOfRowMajor(
+                //     3, 1, new List<float>() { keypointPair.Keypoint1.Coordinate.X, keypointPair.Keypoint1.Coordinate.Y, 1 });
+                // var result = f.Multiply(kp1Mat);
+                // var result2 = kp2Mat.Transpose().Multiply(result);
+                // if (result2[0, 0] <= threshold) // TODO validate multiplication order
+                // {
+                //     workingPairs.Add(keypointPair);
+                // }
+                var kp1Mat = MathNet.Numerics.LinearAlgebra.Vector<float>.Build.DenseOfArray(
+                    [keypointPair.Keypoint2.Coordinate.X, keypointPair.Keypoint2.Coordinate.Y, 1]);
+                var kp2Mat = MathNet.Numerics.LinearAlgebra.Vector<float>.Build.DenseOfArray(
+                    [keypointPair.Keypoint1.Coordinate.X, keypointPair.Keypoint1.Coordinate.Y, 1]);
+
+                var result = f.Multiply(kp1Mat).DotProduct(kp2Mat);
+
+                if (result <= threshold)
                 {
                     workingPairs.Add(keypointPair);
                 }
@@ -72,11 +83,12 @@ public class CameraPoseEstimation
         return (bestSample, bestF); // TODO: Is there some translation that needs to be done? See papaer.
     }
 
-    public void EstimateCameraPose(IList<KeypointPair> keypointPairs, MathNet.Numerics.LinearAlgebra.Matrix<float> FundamentalMatrix){
+    public void EstimateCameraPose(IList<KeypointPair> keypointPairs, MathNet.Numerics.LinearAlgebra.Matrix<float> FundamentalMatrix)
+    {
         var svdResults = FundamentalMatrix.Svd();
         var W = MathNet.Numerics.LinearAlgebra.Matrix<float>.Build.DenseOfRowMajor(
-            3, 3, new List<float>() {0, -1, 0, 1, 0, 0, 0, 0, 1}); 
-        
+            3, 3, new List<float>() { 0, -1, 0, 1, 0, 0, 0, 0, 1 });
+
         // TODO: Need to do some rank 2 stuff.
         var R1 = svdResults.U.Multiply(W).Multiply(svdResults.VT);
         var R2 = svdResults.U.Multiply(W.Transpose()).Multiply(svdResults.VT);
@@ -91,14 +103,15 @@ public class CameraPoseEstimation
         };
 
         System.Console.WriteLine($"Found {keypointPairs.Count} keypoint pairs");
-        
+
         // var mostPositiveDepths = 0;
         var numPositiveDepths = new int[4];
         var pointLists = new List<MathNet.Numerics.LinearAlgebra.Vector<float>>[4];
 
         var i = 0;
-        foreach(var (U, R) in candidates){
-            
+        foreach (var (U, R) in candidates)
+        {
+
             var pointList = new List<MathNet.Numerics.LinearAlgebra.Vector<float>>();
 
             // var r3 = R.Row(2).ToColumnMatrix();
@@ -109,7 +122,8 @@ public class CameraPoseEstimation
 
             System.Console.WriteLine(U.L2Norm());
 
-            foreach(var keypointPair in keypointPairs){
+            foreach (var keypointPair in keypointPairs)
+            {
                 // U ~ C ~ Camera Center
                 // R ~ t ~ Rotation matrix
 
@@ -127,12 +141,13 @@ public class CameraPoseEstimation
                 var scaledX = MathNet.Numerics.LinearAlgebra.Vector<float>.Build.DenseOfEnumerable(X.Take(3).Select(v => v / X[3]).ToList());
                 var point3d = R.Multiply(scaledX) + U;
 
-                plt.Add.ScatterPoints(new List<float>(){point3d[0]}, [point3d[2]], ScottPlot.Colors.Blue);
-                plt.Add.ScatterPoints(new List<float>(){point3d[1]}, [point3d[2]], ScottPlot.Colors.Red);
+                plt.Add.ScatterPoints(new List<float>() { point3d[0] }, [point3d[2]], ScottPlot.Colors.Blue);
+                plt.Add.ScatterPoints(new List<float>() { point3d[1] }, [point3d[2]], ScottPlot.Colors.Red);
 
                 pointList.Add(point3d);
 
-                if (point3d[2] >= 0){
+                if (point3d[2] >= 0)
+                {
                     numPositiveDepths[i] += 1;
                 }
             }
@@ -166,9 +181,9 @@ public class CameraPoseEstimation
         {
             var kpPair = keypointPairs[i];
             var coord1 = transformationMatrix1.Multiply(MathNet.Numerics.LinearAlgebra.Matrix<float>.Build.DenseOfColumnMajor(
-                3, 1, new List<float>(){kpPair.Keypoint1.Coordinate.X, kpPair.Keypoint1.Coordinate.Y, 1}));
+                3, 1, new List<float>() { kpPair.Keypoint1.Coordinate.X, kpPair.Keypoint1.Coordinate.Y, 1 }));
             var coord2 = transformationMatrix2.Multiply(MathNet.Numerics.LinearAlgebra.Matrix<float>.Build.DenseOfColumnMajor(
-                3, 1, new List<float>(){kpPair.Keypoint2.Coordinate.X, kpPair.Keypoint2.Coordinate.Y, 1}));
+                3, 1, new List<float>() { kpPair.Keypoint2.Coordinate.X, kpPair.Keypoint2.Coordinate.Y, 1 }));
 
             mat[i, 0] = (float)(coord1[0, 0] * coord2[0, 0]);
             mat[i, 1] = (float)(coord1[0, 0] * coord2[1, 0]);
@@ -215,12 +230,12 @@ public class CameraPoseEstimation
 
         var meanSquaredDistance = (translationMatrix.X + translationMatrix.Y) / coordinates.Count;
 
-        var scale = Math.Pow(2 / meanSquaredDistance, 1/2);   // TODO what about the 2N?
+        var scale = Math.Pow(2 / meanSquaredDistance, 1 / 2);   // TODO what about the 2N?
 
         var translationMat = MathNet.Numerics.LinearAlgebra.Matrix<float>.Build.DenseOfRowMajor(
-            3, 3, new List<float>() {1, 0, -(float)centroid.X, 0, 1, -(float)centroid.Y, 0, 0, 1});
+            3, 3, new List<float>() { 1, 0, -(float)centroid.X, 0, 1, -(float)centroid.Y, 0, 0, 1 });
         var scalingMat = MathNet.Numerics.LinearAlgebra.Matrix<float>.Build.DenseOfRowMajor(
-            3, 3, new List<float>() {(float)scale, 0, 0, 0, (float)scale, 0, 0, 0, 1});
+            3, 3, new List<float>() { (float)scale, 0, 0, 0, (float)scale, 0, 0, 0, 1 });
 
         return translationMat.Multiply(scalingMat);
     }

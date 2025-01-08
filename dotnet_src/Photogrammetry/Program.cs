@@ -4,6 +4,7 @@ using ImageProcessing;
 using ImageReader.LocalImageReader;
 using Images.Abstractions;
 using Images.Abstractions.Pixels;
+using MathNet.Numerics.Statistics;
 using ScottPlot;
 
 namespace Photogrammetry;
@@ -159,26 +160,32 @@ public class Program
         System.Console.WriteLine($"Found {matchedPairs.Count} matching keypoint pairs");
 
         var outputImage = new Matrix<Rgba>(new MatrixDimensions(inputImage1.Dimensions.Width * 2, inputImage1.Dimensions.Height));
-        
+
         // Copy images to output
-        for(var x = 0; x < inputImage1.Dimensions.Width; x += 1){
-            for(var y = 0; y < inputImage1.Dimensions.Height; y += 1){
+        for (var x = 0; x < inputImage1.Dimensions.Width; x += 1)
+        {
+            for (var y = 0; y < inputImage1.Dimensions.Height; y += 1)
+            {
                 outputImage[x, y] = inputImage1[x, y];
             }
         }
 
-        for(var x = 0; x < inputImage1.Dimensions.Width; x += 1){
-            for(var y = 0; y < inputImage1.Dimensions.Height; y += 1){
+        for (var x = 0; x < inputImage1.Dimensions.Width; x += 1)
+        {
+            for (var y = 0; y < inputImage1.Dimensions.Height; y += 1)
+            {
                 outputImage[x + inputImage1.Dimensions.Width, y] = inputImage2[x, y];
             }
         }
 
-        foreach (var keypointPair in matchedPairs){
-            var k2Coordinate = new Coordinate{
+        foreach (var keypointPair in matchedPairs)
+        {
+            var k2Coordinate = new Coordinate
+            {
                 X = keypointPair.Keypoint2.Coordinate.X + inputImage1.Dimensions.Width,
                 Y = keypointPair.Keypoint2.Coordinate.Y
             };
-            outputImage.DrawLine(keypointPair.Keypoint1.Coordinate, k2Coordinate, new Rgba{R = 100, A = 255});
+            outputImage.DrawLine(keypointPair.Keypoint1.Coordinate, k2Coordinate, new Rgba { R = 100, A = 255 });
         }
 
         var imageReader = new LocalImageReader();
@@ -207,7 +214,25 @@ public class Program
 
         var cpe = new CameraPoseEstimation();
 
-        var (samples, fundamentalMatrix) = cpe.GetFundamentalMatrix(matchedPairs, 100, 8, 0.1f);
+        var (samples, fundamentalMatrix) = cpe.GetFundamentalMatrix(matchedPairs, 2000, 32, 0.001f);
+
+        var errors = new List<float>();
+
+        foreach (var sample in samples)
+        {
+            var kp1Mat = MathNet.Numerics.LinearAlgebra.Vector<float>.Build.DenseOfArray(
+                    [sample.Keypoint2.Coordinate.X, sample.Keypoint2.Coordinate.Y, 1]);    // TODO if needed for perf (and not clarity), just build transposed.
+            var kp2Mat = MathNet.Numerics.LinearAlgebra.Vector<float>.Build.DenseOfArray(
+                [sample.Keypoint1.Coordinate.X, sample.Keypoint1.Coordinate.Y, 1]);
+
+            var result = fundamentalMatrix.Multiply(kp1Mat).DotProduct(kp2Mat);
+            // var result = kp1Mat.ToColumnMatrix().Multiply(fundamentalMatrix).Multiply(kp2Mat);
+
+            errors.Add(Math.Abs(result));
+        }
+
+        System.Console.WriteLine($"Average Error: {errors.Mean()}");
+
         cpe.EstimateCameraPose(samples, fundamentalMatrix);
     }
 }
