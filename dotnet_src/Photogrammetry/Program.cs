@@ -221,7 +221,7 @@ public class Program
         foreach (var sample in samples)
         {
             var kp1Mat = MathNet.Numerics.LinearAlgebra.Vector<float>.Build.DenseOfArray(
-                    [sample.Keypoint2.Coordinate.X, sample.Keypoint2.Coordinate.Y, 1]);    // TODO if needed for perf (and not clarity), just build transposed.
+                [sample.Keypoint2.Coordinate.X, sample.Keypoint2.Coordinate.Y, 1]);
             var kp2Mat = MathNet.Numerics.LinearAlgebra.Vector<float>.Build.DenseOfArray(
                 [sample.Keypoint1.Coordinate.X, sample.Keypoint1.Coordinate.Y, 1]);
 
