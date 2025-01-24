@@ -1,11 +1,14 @@
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using ImageProcessing;
 using ImageReader.LocalImageReader;
 using Images.Abstractions;
 using Images.Abstractions.Pixels;
 using MathNet.Numerics.Statistics;
+using Microsoft.Extensions.Configuration;
 using ScottPlot;
+using SixLabors.ImageSharp;
 
 namespace Photogrammetry;
 
@@ -48,11 +51,28 @@ public class Program
 
         // var image1 = imageReader.ReadImageFromDirectory("15pt_star.png");
         // var image2 = imageReader.ReadImageFromDirectory("15pt_star_shifted_150.png");
-        var image1 = imageReader.ReadImageFromDirectory("lego_space_1_from_left.jpg");
-        var image2 = imageReader.ReadImageFromDirectory("lego_space_1_from_right.jpg");
-        EstimateCameraPose(image1, image2);
+        // var image1 = imageReader.ReadImageFromDirectory("lego_space_1_from_left.jpg");
+        // var image2 = imageReader.ReadImageFromDirectory("lego_space_1_from_right.jpg");
+        // EstimateCameraPose(image1, image2);
+
+        SetupConfiguration();
 
         Console.WriteLine($"Elapsed: {sw.Elapsed}");
+    }
+
+    public static IConfiguration SetupConfiguration(){
+        var env = Environment.GetEnvironmentVariable("PHOTOGRAMMETRY_ENVIRONMENT");
+
+        if (string.IsNullOrWhiteSpace(env))
+            throw new Exception("Environment variable \"PHOTOGRAMMETRY_ENVIRONMENT\" must be set");
+        
+        var configuration = new ConfigurationBuilder()
+            .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+            .AddJsonFile($"appsettings.{env.ToLower()}.json", optional: true, reloadOnChange: true)
+            .Build();
+
+        System.Console.WriteLine($"Value: {configuration.GetRequiredSection("test").Value}");
+        return configuration;
     }
 
     public static Matrix<Rgba> TestDeWarp(Matrix<Rgba> inputImage)
