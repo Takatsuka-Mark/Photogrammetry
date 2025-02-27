@@ -1,4 +1,4 @@
-using Framework.BaseOptions;
+using Framework;
 
 namespace ImageReader.LocalImageReader;
 

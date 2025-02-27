@@ -11,6 +11,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\Framework\Framework.csproj" />
       <ProjectReference Include="..\ImageReader.Abstractions\ImageReader.Abstractions.csproj" />
       <ProjectReference Include="..\Images.Abstractions\Images.Abstractions.csproj" />
     </ItemGroup>
