@@ -19,7 +19,8 @@ public class Program
         var sw = new Stopwatch();
         sw.Start();
 
-        var imageReader = new LocalImageReader();
+        var configuration = SetupConfiguration();
+        var imageReader = new LocalImageReader(configuration);
         // Dewarping tests
         // var image = imageReader.ReadImageFromDirectory("straight_edge_1920x1080.jpg");
         // var result = TestDeWarp(image);
@@ -55,8 +56,6 @@ public class Program
         // var image2 = imageReader.ReadImageFromDirectory("lego_space_1_from_right.jpg");
         // EstimateCameraPose(image1, image2);
 
-        var configuration = SetupConfiguration();
-
         Console.WriteLine($"Elapsed: {sw.Elapsed}");
     }
 
@@ -89,7 +88,7 @@ public class Program
         return result;
     }
 
-    public static void TestKeypointDetection(Matrix<Rgba> inputImage)
+    public static void TestKeypointDetection(LocalImageReader imageReader, Matrix<Rgba> inputImage)
     {
         var swNoIo = new Stopwatch();
         swNoIo.Start();
@@ -114,11 +113,10 @@ public class Program
         }
 
         // TODO probably change the name of this image reader...
-        var imageReader = new LocalImageReader();
         imageReader.WriteImageToDirectory(inputImage, "dotnet_keypoints");
     }
 
-    public static void TestRedundantKeypointElimination(Matrix<Rgba> inputImage)
+    public static void TestRedundantKeypointElimination(LocalImageReader imageReader, Matrix<Rgba> inputImage)
     {
         var swNoIo = new Stopwatch();
         swNoIo.Start();
@@ -150,11 +148,10 @@ public class Program
         }
 
         // TODO probably change the name of this image reader...
-        var imageReader = new LocalImageReader();
         imageReader.WriteImageToDirectory(inputImage, "dotnet_keypoints");
     }
 
-    public static void TestKeypointMatching(Matrix<Rgba> inputImage1, Matrix<Rgba> inputImage2)
+    public static void TestKeypointMatching(LocalImageReader imageReader, Matrix<Rgba> inputImage1, Matrix<Rgba> inputImage2)
     {
         var swNoIo = new Stopwatch();
         swNoIo.Start();
@@ -206,8 +203,7 @@ public class Program
             };
             outputImage.DrawLine(keypointPair.Keypoint1.Coordinate, k2Coordinate, new Rgba { R = 100, A = 255 });
         }
-
-        var imageReader = new LocalImageReader();
+        
         imageReader.WriteImageToDirectory(outputImage, "dotnet_paired_keypoints");
     }
 

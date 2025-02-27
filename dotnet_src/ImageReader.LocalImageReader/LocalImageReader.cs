@@ -2,6 +2,7 @@ using System.Numerics;
 using Images.Abstractions;
 using SixLabors.ImageSharp.PixelFormats;
 using Images.Abstractions.Pixels;
+using Microsoft.Extensions.Configuration;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats;
 
@@ -12,9 +13,9 @@ public class LocalImageReader
 {
     private readonly ImageReaderOptions _options;
 
-    public LocalImageReader()
+    public LocalImageReader(IConfiguration configuration)
     {
-        _options = new ImageReaderOptions();
+        _options = new ImageReaderOptions(configuration);
     }
 
     public Images.Abstractions.Matrix<Rgba> ReadImageFromDirectory(string filename)

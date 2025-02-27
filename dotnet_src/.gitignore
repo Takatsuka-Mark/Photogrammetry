@@ -35,3 +35,6 @@ artifacts/
 *.sln.ide
 
 ../.gitconfig
+
+*.ply
+*.png
