@@ -1,6 +1,8 @@
+using Framework.BaseOptions;
+
 namespace ImageReader.LocalImageReader;
 
-public class ImageReaderOptions
+public class ImageReaderOptions : BaseOptions
 {
     public string RootDirectory { get; init; }
     public string RootOutputDirectory { get; init; }
@@ -10,9 +12,7 @@ public class ImageReaderOptions
     
     public ImageReaderOptions()
     {
-        RootDirectory = Environment.GetEnvironmentVariable(RootDirectoryKey) ?? 
-                        throw new ArgumentNullException(RootDirectoryKey);
-        RootOutputDirectory = Environment.GetEnvironmentVariable(RootOutputDirectoryKey) ??
-                        throw new ArgumentNullException(RootOutputDirectoryKey);
+        RootDirectory = GetRequired(RootDirectoryKey);
+        RootOutputDirectory = GetRequired(RootOutputDirectoryKey);
     }
 }

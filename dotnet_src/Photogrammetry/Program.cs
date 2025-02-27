@@ -55,7 +55,7 @@ public class Program
         // var image2 = imageReader.ReadImageFromDirectory("lego_space_1_from_right.jpg");
         // EstimateCameraPose(image1, image2);
 
-        SetupConfiguration();
+        var configuration = SetupConfiguration();
 
         Console.WriteLine($"Elapsed: {sw.Elapsed}");
     }
@@ -71,7 +71,6 @@ public class Program
             .AddJsonFile($"appsettings.{env.ToLower()}.json", optional: true, reloadOnChange: true)
             .Build();
 
-        System.Console.WriteLine($"Value: {configuration.GetRequiredSection("test").Value}");
         return configuration;
     }
 
