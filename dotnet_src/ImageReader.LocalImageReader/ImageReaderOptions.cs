@@ -10,9 +10,9 @@ public class ImageReaderOptions : BaseOptions
     public string RootDirectory { get; init; }
     public string RootOutputDirectory { get; init; }
     
-    public ImageReaderOptions(IConfiguration configuration)
+    public ImageReaderOptions(IConfiguration configuration) : base(configuration, Section)
     {
-        RootDirectory = GetRequired(configuration, Section, "root_directory");
-        RootOutputDirectory = GetRequired(configuration, Section, "root_output_directory");
+        RootDirectory = GetRequired("root_directory");
+        RootOutputDirectory = GetRequired("root_output_directory");
     }
 }

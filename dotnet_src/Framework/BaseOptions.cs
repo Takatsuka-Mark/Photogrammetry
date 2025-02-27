@@ -4,9 +4,20 @@ namespace Framework;
 
 public abstract class BaseOptions
 {
-    public string GetRequired(IConfiguration configuration, string section, string key)
+    private readonly IConfiguration _configuration;
+    private readonly string _section;
+
+    public BaseOptions(IConfiguration configuration, string section)
     {
-        var confSection = configuration.GetRequiredSection(section);
+        _configuration = configuration;
+        _section = section;
+    }
+
+    public string GetRequired(string section, string key)
+    {
+        var confSection = _configuration.GetRequiredSection(section);
         return confSection.GetConnectionString(key) ?? throw new ArgumentException(key);
     }
+
+    public string GetRequired(string key) => GetRequired(_section, key);
 }
