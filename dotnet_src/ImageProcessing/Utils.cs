@@ -50,4 +50,22 @@ public class Utils
     public static double CoordinateDistance(Coordinate c1, Coordinate c2){
         return Math.Sqrt(Math.Pow(c2.X - c1.X, 2) + Math.Pow(c2.Y - c1.Y, 2));
     }
+
+    public static void CreatePointCloud(string filename, List<MathNet.Numerics.LinearAlgebra.Vector<float>> points){
+        // TODO add some validation
+        using var fs = File.OpenWrite(filename);
+        using var sw = new StreamWriter(fs);
+        
+        sw.WriteLine("ply");
+        sw.WriteLine("format ascii 1.0");
+        sw.WriteLine($"element vertex {points.Count}");
+        sw.WriteLine($"property float x");
+        sw.WriteLine($"property float y");
+        sw.WriteLine($"property float z");
+        sw.WriteLine("end_header");
+        
+        foreach(var point in points){
+            sw.WriteLine($"{point[0]} {point[1]} {point[2]}");
+        }
+    }
 }

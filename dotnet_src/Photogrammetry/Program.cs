@@ -1,9 +1,14 @@
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using ImageProcessing;
 using ImageReader.LocalImageReader;
 using Images.Abstractions;
 using Images.Abstractions.Pixels;
+using MathNet.Numerics.Statistics;
+using Microsoft.Extensions.Configuration;
+using ScottPlot;
+using SixLabors.ImageSharp;
 
 namespace Photogrammetry;
 
@@ -14,7 +19,8 @@ public class Program
         var sw = new Stopwatch();
         sw.Start();
 
-        var imageReader = new LocalImageReader();
+        var configuration = SetupConfiguration();
+        var imageReader = new LocalImageReader(configuration);
         // Dewarping tests
         // var image = imageReader.ReadImageFromDirectory("straight_edge_1920x1080.jpg");
         // var result = TestDeWarp(image);
@@ -35,12 +41,36 @@ public class Program
         // imageReader.WriteImageToDirectory(image1, "test_line");
 
         // var image = imageReader.ReadImageFromDirectory("15pt_star.png");
-        var image = imageReader.ReadImageFromDirectory("lego_space_1_from_left.jpg");
-        TestRedundantKeypointElimination(image);
+        // var image = imageReader.ReadImageFromDirectory("lego_space_1_from_left.jpg");
+        // TestRedundantKeypointElimination(image);
         // System.Console.WriteLine(image.Dimensions.Width);
         // System.Console.WriteLine(image.Dimensions.Height);
 
+        // var image1 = imageReader.ReadImageFromDirectory("15pt_star.png");
+        // var image2 = imageReader.ReadImageFromDirectory("15pt_star_shifted_150.png");
+        // TestKeypointMatching(image1, image2);
+
+        // var image1 = imageReader.ReadImageFromDirectory("15pt_star.png");
+        // var image2 = imageReader.ReadImageFromDirectory("15pt_star_shifted_150.png");
+        // var image1 = imageReader.ReadImageFromDirectory("lego_space_1_from_left.jpg");
+        // var image2 = imageReader.ReadImageFromDirectory("lego_space_1_from_right.jpg");
+        // EstimateCameraPose(image1, image2);
+
         Console.WriteLine($"Elapsed: {sw.Elapsed}");
+    }
+
+    public static IConfiguration SetupConfiguration(){
+        var env = Environment.GetEnvironmentVariable("PHOTOGRAMMETRY_ENVIRONMENT");
+
+        if (string.IsNullOrWhiteSpace(env))
+            throw new Exception("Environment variable \"PHOTOGRAMMETRY_ENVIRONMENT\" must be set");
+        
+        var configuration = new ConfigurationBuilder()
+            .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+            .AddJsonFile($"appsettings.{env.ToLower()}.json", optional: true, reloadOnChange: true)
+            .Build();
+
+        return configuration;
     }
 
     public static Matrix<Rgba> TestDeWarp(Matrix<Rgba> inputImage)
@@ -58,7 +88,7 @@ public class Program
         return result;
     }
 
-    public static void TestKeypointDetection(Matrix<Rgba> inputImage)
+    public static void TestKeypointDetection(LocalImageReader imageReader, Matrix<Rgba> inputImage)
     {
         var swNoIo = new Stopwatch();
         swNoIo.Start();
@@ -83,11 +113,10 @@ public class Program
         }
 
         // TODO probably change the name of this image reader...
-        var imageReader = new LocalImageReader();
         imageReader.WriteImageToDirectory(inputImage, "dotnet_keypoints");
     }
 
-    public static void TestRedundantKeypointElimination(Matrix<Rgba> inputImage)
+    public static void TestRedundantKeypointElimination(LocalImageReader imageReader, Matrix<Rgba> inputImage)
     {
         var swNoIo = new Stopwatch();
         swNoIo.Start();
@@ -119,11 +148,10 @@ public class Program
         }
 
         // TODO probably change the name of this image reader...
-        var imageReader = new LocalImageReader();
         imageReader.WriteImageToDirectory(inputImage, "dotnet_keypoints");
     }
 
-    public static void TestKeypointMatching(Matrix<Rgba> inputImage1, Matrix<Rgba> inputImage2)
+    public static void TestKeypointMatching(LocalImageReader imageReader, Matrix<Rgba> inputImage1, Matrix<Rgba> inputImage2)
     {
         var swNoIo = new Stopwatch();
         swNoIo.Start();
@@ -148,29 +176,78 @@ public class Program
         System.Console.WriteLine($"Found {matchedPairs.Count} matching keypoint pairs");
 
         var outputImage = new Matrix<Rgba>(new MatrixDimensions(inputImage1.Dimensions.Width * 2, inputImage1.Dimensions.Height));
-        
+
         // Copy images to output
-        for(var x = 0; x < inputImage1.Dimensions.Width; x += 1){
-            for(var y = 0; y < inputImage1.Dimensions.Height; y += 1){
+        for (var x = 0; x < inputImage1.Dimensions.Width; x += 1)
+        {
+            for (var y = 0; y < inputImage1.Dimensions.Height; y += 1)
+            {
                 outputImage[x, y] = inputImage1[x, y];
             }
         }
 
-        for(var x = 0; x < inputImage1.Dimensions.Width; x += 1){
-            for(var y = 0; y < inputImage1.Dimensions.Height; y += 1){
+        for (var x = 0; x < inputImage1.Dimensions.Width; x += 1)
+        {
+            for (var y = 0; y < inputImage1.Dimensions.Height; y += 1)
+            {
                 outputImage[x + inputImage1.Dimensions.Width, y] = inputImage2[x, y];
             }
         }
 
-        foreach (var keypointPair in matchedPairs){
-            var k2Coordinate = new Coordinate{
+        foreach (var keypointPair in matchedPairs)
+        {
+            var k2Coordinate = new Coordinate
+            {
                 X = keypointPair.Keypoint2.Coordinate.X + inputImage1.Dimensions.Width,
                 Y = keypointPair.Keypoint2.Coordinate.Y
             };
-            outputImage.DrawLine(keypointPair.Keypoint1.Coordinate, k2Coordinate, new Rgba{R = 100, A = 255});
+            outputImage.DrawLine(keypointPair.Keypoint1.Coordinate, k2Coordinate, new Rgba { R = 100, A = 255 });
+        }
+        
+        imageReader.WriteImageToDirectory(outputImage, "dotnet_paired_keypoints");
+    }
+
+    public static void EstimateCameraPose(Matrix<Rgba> inputImage1, Matrix<Rgba> inputImage2)
+    {
+        var swNoIo = new Stopwatch();
+        swNoIo.Start();
+
+        var keypointDetector = new KeypointDetection(0.2f, 50, 256);
+        var rke = new RedundantKeypointEliminator((int)(inputImage1.Dimensions.Width * 0.015f));
+
+        var bwImage1 = inputImage1.Convert(Grayscale.FromRgba);
+        var keypoints1 = rke.EliminateRedundantKeypoints(keypointDetector.Detect(bwImage1));
+
+        var bwImage2 = inputImage2.Convert(Grayscale.FromRgba);
+        var keypoints2 = rke.EliminateRedundantKeypoints(keypointDetector.Detect(bwImage2));
+
+        System.Console.WriteLine($"Found {keypoints1.Count} keypoints from Image 1");
+        System.Console.WriteLine($"Found {keypoints2.Count} keypoints from Image 2");
+
+        var keypointMatching = new KeypointMatching(100);
+        var matchedPairs = keypointMatching.MatchKeypoints(keypoints1, keypoints2);
+
+        var cpe = new CameraPoseEstimation();
+
+        var (samples, fundamentalMatrix) = cpe.GetFundamentalMatrix(matchedPairs, 2000, 32, 0.001f);
+
+        var errors = new List<float>();
+
+        foreach (var sample in samples)
+        {
+            var kp1Mat = MathNet.Numerics.LinearAlgebra.Vector<float>.Build.DenseOfArray(
+                [sample.Keypoint2.Coordinate.X, sample.Keypoint2.Coordinate.Y, 1]);
+            var kp2Mat = MathNet.Numerics.LinearAlgebra.Vector<float>.Build.DenseOfArray(
+                [sample.Keypoint1.Coordinate.X, sample.Keypoint1.Coordinate.Y, 1]);
+
+            var result = fundamentalMatrix.Multiply(kp1Mat).DotProduct(kp2Mat);
+            // var result = kp1Mat.ToColumnMatrix().Multiply(fundamentalMatrix).Multiply(kp2Mat);
+
+            errors.Add(Math.Abs(result));
         }
 
-        var imageReader = new LocalImageReader();
-        imageReader.WriteImageToDirectory(outputImage, "dotnet_paired_keypoints");
+        System.Console.WriteLine($"Average Error: {errors.Mean()}");
+
+        cpe.EstimateCameraPose(samples, fundamentalMatrix);
     }
 }

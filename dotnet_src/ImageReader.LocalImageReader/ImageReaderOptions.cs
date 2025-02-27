@@ -1,18 +1,18 @@
+using Framework;
+using Microsoft.Extensions.Configuration;
+
 namespace ImageReader.LocalImageReader;
 
-public class ImageReaderOptions
+public class ImageReaderOptions : BaseOptions
 {
+    private const string Section = "image_reader";
+    
     public string RootDirectory { get; init; }
     public string RootOutputDirectory { get; init; }
-
-    private const string RootDirectoryKey = "image_reader:root_directory";
-    private const string RootOutputDirectoryKey = "image_reader:root_output_directory";
     
-    public ImageReaderOptions()
+    public ImageReaderOptions(IConfiguration configuration)
     {
-        RootDirectory = Environment.GetEnvironmentVariable(RootDirectoryKey) ?? 
-                        throw new ArgumentNullException(RootDirectoryKey);
-        RootOutputDirectory = Environment.GetEnvironmentVariable(RootOutputDirectoryKey) ??
-                        throw new ArgumentNullException(RootOutputDirectoryKey);
+        RootDirectory = GetRequired(configuration, Section, "root_directory");
+        RootOutputDirectory = GetRequired(configuration, Section, "root_output_directory");
     }
 }
