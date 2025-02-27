@@ -6,14 +6,9 @@ namespace ImageProcessing.Pipelines;
 
 public abstract class BasePipeline
 {
-    protected BasePipelineOptions Options { get; private init; }
-    protected List<BaseItem<BaseMessage, BaseMessage>> PipelineItems { get; private init; }
-
-    private BasePipeline(BasePipelineOptions options)
-    {
-        Options = options;
-        PipelineItems = new List<BaseItem<BaseMessage, BaseMessage>>();
-    }
+    // TODO not a huge fan of null suppression, but it might have to happen. sadly.
+    protected BasePipelineOptions Options { get; private init; } = null!;
+    protected List<BaseItem<BaseMessage, BaseMessage>> PipelineItems { get; private init; } = null!;
 
     public abstract void ValidatePipeline();
 
@@ -28,6 +23,8 @@ public abstract class BasePipeline
     {
         private readonly BasePipelineOptions _options;
         private readonly List<BaseItem<BaseMessage, BaseMessage>> _items;
+        // TODO may want to introduce terminal items - like one that reads. Tbh the read location should exist though.
+        // TODO also may want to make outputs nullable since the pipeline might fail but not want to stop functioning.
 
         public Builder(BasePipelineOptions options)
         {
