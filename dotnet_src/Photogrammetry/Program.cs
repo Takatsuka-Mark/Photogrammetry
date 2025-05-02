@@ -7,6 +7,8 @@ using Images.Abstractions;
 using Images.Abstractions.Pixels;
 using MathNet.Numerics.Statistics;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using ScottPlot;
 using SixLabors.ImageSharp;
 
@@ -14,13 +16,40 @@ namespace Photogrammetry;
 
 public class Program
 {
-    public static void Main(string[] args)
+    public static async Task Main(string[] args)
     {
-        var sw = new Stopwatch();
-        sw.Start();
+        using var host = Host.CreateDefaultBuilder(args)
+        .ConfigureAppConfiguration((context, config) =>
+        {
+            var env = Environment.GetEnvironmentVariable("PHOTOGRAMMETRY_ENVIRONMENT");
 
-        var configuration = SetupConfiguration();
-        var imageReader = new LocalImageReader(configuration);
+            if (string.IsNullOrWhiteSpace(env))
+                throw new Exception("Environment variable \"PHOTOGRAMMETRY_ENVIRONMENT\" must be set");
+
+            // TODO figure out some way around the photogrammetry prefix hack
+            config
+            .AddJsonFile("Photogrammetry/appsettings.json", optional: false, reloadOnChange: true)
+            .AddJsonFile($"Photogrammetry/appsettings.{env.ToLower()}.json", optional: true, reloadOnChange: true)
+            ;
+        })
+        .ConfigureServices((context, services) =>
+        {
+            services
+            .AddHostedService<TestService>()
+            // .Configure<ImageReaderOptions>(context.Configuration.GetSection("ImageReader"))
+            ;
+
+            services.AddOptionsWithValidateOnStart<ImageReaderOptions>().Bind(context.Configuration.GetSection(ImageReaderOptions.Section)).ValidateDataAnnotations();
+        })
+        .Build();
+
+        await host.RunAsync();
+
+        // var sw = new Stopwatch();
+        // sw.Start();
+
+        // var configuration = SetupConfiguration();
+        // var imageReader = new LocalImageReader(configuration);
         // Dewarping tests
         // var image = imageReader.ReadImageFromDirectory("straight_edge_1920x1080.jpg");
         // var result = TestDeWarp(image);
@@ -56,15 +85,16 @@ public class Program
         // var image2 = imageReader.ReadImageFromDirectory("lego_space_1_from_right.jpg");
         // EstimateCameraPose(image1, image2);
 
-        Console.WriteLine($"Elapsed: {sw.Elapsed}");
+        // Console.WriteLine($"Elapsed: {sw.Elapsed}");
     }
 
-    public static IConfiguration SetupConfiguration(){
+    public static IConfiguration SetupConfiguration()
+    {
         var env = Environment.GetEnvironmentVariable("PHOTOGRAMMETRY_ENVIRONMENT");
 
         if (string.IsNullOrWhiteSpace(env))
             throw new Exception("Environment variable \"PHOTOGRAMMETRY_ENVIRONMENT\" must be set");
-        
+
         var configuration = new ConfigurationBuilder()
             .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
             .AddJsonFile($"appsettings.{env.ToLower()}.json", optional: true, reloadOnChange: true)
@@ -203,7 +233,7 @@ public class Program
             };
             outputImage.DrawLine(keypointPair.Keypoint1.Coordinate, k2Coordinate, new Rgba { R = 100, A = 255 });
         }
-        
+
         imageReader.WriteImageToDirectory(outputImage, "dotnet_paired_keypoints");
     }
 

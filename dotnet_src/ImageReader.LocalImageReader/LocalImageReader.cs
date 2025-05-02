@@ -13,9 +13,9 @@ public class LocalImageReader
 {
     private readonly ImageReaderOptions _options;
 
-    public LocalImageReader(IConfiguration configuration)
+    public LocalImageReader(ImageReaderOptions imageReaderOptions)
     {
-        _options = new ImageReaderOptions(configuration);
+        _options = imageReaderOptions;
     }
 
     public Images.Abstractions.Matrix<Rgba> ReadImageFromDirectory(string filename)
