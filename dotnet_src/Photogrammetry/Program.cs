@@ -88,21 +88,6 @@ public class Program
         // Console.WriteLine($"Elapsed: {sw.Elapsed}");
     }
 
-    public static IConfiguration SetupConfiguration()
-    {
-        var env = Environment.GetEnvironmentVariable("PHOTOGRAMMETRY_ENVIRONMENT");
-
-        if (string.IsNullOrWhiteSpace(env))
-            throw new Exception("Environment variable \"PHOTOGRAMMETRY_ENVIRONMENT\" must be set");
-
-        var configuration = new ConfigurationBuilder()
-            .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-            .AddJsonFile($"appsettings.{env.ToLower()}.json", optional: true, reloadOnChange: true)
-            .Build();
-
-        return configuration;
-    }
-
     public static Matrix<Rgba> TestDeWarp(Matrix<Rgba> inputImage)
     {
         var swNoIo = new Stopwatch();
