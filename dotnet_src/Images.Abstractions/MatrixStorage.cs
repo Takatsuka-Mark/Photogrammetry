@@ -25,7 +25,7 @@ public class MatrixStorage<TData>
         var numRows = colMajorArray.GetLength(1);
 
         var data = new TData[(long)numRows * numCols];
-        var dimensions = new MatrixDimensions(numCols, numRows);
+        var dimensions = new MatrixDimensions{Width = numCols, Height = numRows};
 
         for (var row = 0; row < numRows; row++)
         {
@@ -45,7 +45,7 @@ public class MatrixStorage<TData>
         var numCols = rowMajorArray.GetLength(1);
 
         var data = new TData[(long)numRows * numCols];
-        var dimensions = new MatrixDimensions(numCols, numRows);
+        var dimensions = new MatrixDimensions{Width = numCols, Height = numRows};
 
         for (var row = 0; row < numRows; row++)
         {

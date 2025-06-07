@@ -22,7 +22,7 @@ public class LocalImageReader
     {
 
         var rawImage = Image.Load<Rgba64>(new DecoderOptions{SkipMetadata = false}, $"{_options.RootDirectory}/{filename}");
-        var myImage = new Images.Abstractions.Matrix<Rgba>(new MatrixDimensions(rawImage.Width, rawImage.Height));
+        var myImage = new Images.Abstractions.Matrix<Rgba>(new MatrixDimensions{Width = rawImage.Width, Height = rawImage.Height});
         
         for (var x = 0; x < rawImage.Width; x++)
         {

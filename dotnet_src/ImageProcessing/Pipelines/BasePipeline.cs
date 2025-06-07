@@ -16,8 +16,10 @@ public abstract class BasePipeline
     {
         ValidatePipeline(); // TODO potentially double validating. Should set _isValidated flag.
     }
+    
+    // TODO maybe have some notion of "run pipeline with input?" and then track that item thorough the process?
 
-    public abstract Task RunPipelineAsync();
+    public abstract Task RunPipelineAsync(CancellationToken cancellationToken);
 
     public abstract class Builder<TPipeline> where TPipeline : BasePipeline, new()
     {
@@ -32,11 +34,11 @@ public abstract class BasePipeline
             _items = new List<BaseItem<BaseMessage, BaseMessage>>();
         }
 
-        public Builder<TPipeline> AddItem(BaseItem<BaseMessage, BaseMessage> item)
+        public Builder<TPipeline> AddItem<TInput, TOutput>(BaseItem<TInput, TOutput> item) where TOutput : BaseMessage where TInput : BaseMessage
         {
             if (_items.Count <= 0)
             {
-                _items.Add(item);
+                _items.Add(item as BaseItem<BaseMessage, BaseMessage> ?? throw new InvalidOperationException());
                 return this;
             }
 
@@ -46,7 +48,7 @@ public abstract class BasePipeline
             if (previousOutput != input)
                 throw new Exception($"Cannot add item. Input type ({input.FullName}) does not match previous item's output type ({previousOutput.FullName})");
 
-            _items.Add(item);
+            _items.Add(item as BaseItem<BaseMessage, BaseMessage> ?? throw new InvalidOperationException());
             return this;
         }
 
@@ -58,7 +60,7 @@ public abstract class BasePipeline
                     where TInput : BaseMessage
                     where TOutput : BaseMessage => typeof(TOutput);
 
-        public TPipeline Build()
+        internal TPipeline Build()
         {
             if (_items.Count <= 0)
                 throw new Exception("Failed to build pipeline. There must be at least one item");

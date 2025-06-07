@@ -3,9 +3,9 @@ using Images.Abstractions.Pixels;
 
 namespace ImageProcessing.Pipelines.Messages;
 
-public class RgbImage : BaseMessage
+public class RgbaImage : BaseMessage
 {
     public override string GetName() => "RGB Image message";
     
-    public required Matrix<Rgb> Image { get; init; }
+    public required Matrix<Rgba> Image { get; init; }
 }

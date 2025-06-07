@@ -13,5 +13,5 @@ public abstract class BaseItem<TInput, TOutput> where TInput : BaseMessage where
         _options = options;
     }
 
-    public abstract Task<TOutput> ProcessAsync(TInput input);
+    public abstract Task<TOutput> ProcessAsync(TInput input, CancellationToken cancellationToken);
 }

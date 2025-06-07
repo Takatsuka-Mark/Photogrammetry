@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using ImageProcessing;
+using ImageProcessing.Options;
 using ImageReader.LocalImageReader;
 using Images.Abstractions;
 using Images.Abstractions.Pixels;
@@ -26,20 +27,22 @@ public class Program
             if (string.IsNullOrWhiteSpace(env))
                 throw new Exception("Environment variable \"PHOTOGRAMMETRY_ENVIRONMENT\" must be set");
 
-            // TODO figure out some way around the photogrammetry prefix hack
             config
-            .AddJsonFile("Photogrammetry/appsettings.json", optional: false, reloadOnChange: true)
-            .AddJsonFile($"Photogrammetry/appsettings.{env.ToLower()}.json", optional: true, reloadOnChange: true)
+            .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+            .AddJsonFile($"appsettings.{env.ToLower()}.json", optional: true, reloadOnChange: true)
             ;
         })
         .ConfigureServices((context, services) =>
         {
             services
-            .AddHostedService<TestService>()
-            // .Configure<ImageReaderOptions>(context.Configuration.GetSection("ImageReader"))
+                .AddHostedService<TestService>()
+                .AddSingleton<DeWarp>()
             ;
 
-            services.AddOptionsWithValidateOnStart<ImageReaderOptions>().Bind(context.Configuration.GetSection(ImageReaderOptions.Section)).ValidateDataAnnotations();
+            services.AddOptionsWithValidateOnStart<ImageReaderOptions>()
+                .Bind(context.Configuration.GetSection(ImageReaderOptions.Section)).ValidateDataAnnotations();
+            services.AddOptionsWithValidateOnStart<DeWarpOptions>()
+                .Bind(context.Configuration.GetSection(DeWarpOptions.Section)).ValidateDataAnnotations();
         })
         .Build();
 
@@ -88,20 +91,20 @@ public class Program
         // Console.WriteLine($"Elapsed: {sw.Elapsed}");
     }
 
-    public static Matrix<Rgba> TestDeWarp(Matrix<Rgba> inputImage)
-    {
-        var swNoIo = new Stopwatch();
-        swNoIo.Start();
-        var deWarp = new DeWarp(new MatrixDimensions(1920, 1080));
-        var distortionMatrix = deWarp.GetDistortionMatrix(new[] { 3e-4, 1e-7, 0, 0, 0 });
-        var distMatTime = swNoIo.Elapsed;
-        swNoIo.Restart();
-
-        var result = DeWarp.ApplyDistortionMat(inputImage, distortionMatrix);
-
-        Console.WriteLine($"Elapsed while de-warping: Generating Distortion Map: {distMatTime}, Applying: {swNoIo.Elapsed}");
-        return result;
-    }
+    // public static Matrix<Rgba> TestDeWarp(Matrix<Rgba> inputImage)
+    // {
+    //     var swNoIo = new Stopwatch();
+    //     swNoIo.Start();
+    //     var deWarp = new DeWarp(new DeWarpOptions{Height = 1080, Width = 1920 });
+    //     var distortionMatrix = deWarp.GetDistortionMatrix(new[] { 3e-4, 1e-7, 0, 0, 0 });
+    //     var distMatTime = swNoIo.Elapsed;
+    //     swNoIo.Restart();
+    //
+    //     var result = DeWarp.ApplyDistortionMat(inputImage, distortionMatrix);
+    //
+    //     Console.WriteLine($"Elapsed while de-warping: Generating Distortion Map: {distMatTime}, Applying: {swNoIo.Elapsed}");
+    //     return result;
+    // }
 
     public static void TestKeypointDetection(LocalImageReader imageReader, Matrix<Rgba> inputImage)
     {
@@ -190,7 +193,7 @@ public class Program
 
         System.Console.WriteLine($"Found {matchedPairs.Count} matching keypoint pairs");
 
-        var outputImage = new Matrix<Rgba>(new MatrixDimensions(inputImage1.Dimensions.Width * 2, inputImage1.Dimensions.Height));
+        var outputImage = new Matrix<Rgba>(new MatrixDimensions{Width = inputImage1.Dimensions.Width * 2, Height = inputImage1.Dimensions.Height});
 
         // Copy images to output
         for (var x = 0; x < inputImage1.Dimensions.Width; x += 1)
