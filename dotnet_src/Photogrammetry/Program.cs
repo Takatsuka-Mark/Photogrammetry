@@ -1,8 +1,11 @@
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using ImageProcessing;
 using ImageProcessing.Options;
+using ImageProcessing.Pipelines;
+using ImageProcessing.Pipelines.Items;
 using ImageReader.LocalImageReader;
 using Images.Abstractions;
 using Images.Abstractions.Pixels;
@@ -37,6 +40,9 @@ public class Program
             services
                 .AddHostedService<TestService>()
                 .AddSingleton<DeWarp>()
+                .AddSingleton<DeWarpItem>()
+                .AddSingleton<DeWarpSequentialPipeline.DeWarpSequentialPipelineBuilder>()
+                .AddSingleton<LocalImageReader>()
             ;
 
             services.AddOptionsWithValidateOnStart<ImageReaderOptions>()

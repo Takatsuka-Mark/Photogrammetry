@@ -4,7 +4,7 @@ using ImageProcessing.Pipelines.Options;
 
 namespace ImageProcessing.Pipelines.Items;
 
-public class DeWarpItem : BaseItem<RgbaImage, RgbaImage>
+public class DeWarpItem : BaseItem
 {
 	private readonly DistortionMatrix _distortionMatrix;
 
@@ -13,8 +13,21 @@ public class DeWarpItem : BaseItem<RgbaImage, RgbaImage>
 		_distortionMatrix = deWarp.GetDistortionMatrix();	// TODO create initialize function?
 	}
 	
-	public override Task<RgbaImage> ProcessAsync(RgbaImage input, CancellationToken cancellationToken)
+	public override Task<BaseMessage> ProcessAsync(BaseMessage input, CancellationToken cancellationToken)
 	{
-		return Task.FromResult(new RgbaImage { Image = DeWarp.ApplyDistortionMat(input.Image, _distortionMatrix) });
+		var castMessage = AsInputType(input);
+		// TODO cast input and output?
+		return Task.FromResult<BaseMessage>(new RgbaImage
+			{ Image = DeWarp.ApplyDistortionMat(castMessage.Image, _distortionMatrix) });
 	}
+
+	public override Type GetInputType() => typeof(RgbaImage);
+	public override Type GetOutputType() => typeof(RgbaImage);
+	private RgbaImage AsInputType(BaseMessage input)
+	{
+		var value = input as RgbaImage;
+		if (input.GetType() != GetInputType() || value is null)
+			throw new Exception("Failed to cast input message");
+		return value;
+	} 
 }

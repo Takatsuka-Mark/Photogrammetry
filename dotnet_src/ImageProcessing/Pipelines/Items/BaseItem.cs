@@ -3,7 +3,7 @@ using ImageProcessing.Pipelines.Options;
 
 namespace ImageProcessing.Pipelines.Items;
 
-public abstract class BaseItem<TInput, TOutput> where TInput : BaseMessage where TOutput : BaseMessage
+public abstract class BaseItem
 {
     private readonly BaseItemOptions _options;
 
@@ -13,5 +13,8 @@ public abstract class BaseItem<TInput, TOutput> where TInput : BaseMessage where
         _options = options;
     }
 
-    public abstract Task<TOutput> ProcessAsync(TInput input, CancellationToken cancellationToken);
+    public abstract Task<BaseMessage> ProcessAsync(BaseMessage input, CancellationToken cancellationToken);
+
+    public abstract Type GetInputType();
+    public abstract Type GetOutputType();
 }

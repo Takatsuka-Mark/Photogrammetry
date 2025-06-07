@@ -31,11 +31,12 @@ public class TestService : IHostedService
 
         // TODO do this in an initialization step?
         var pipeline = _pipelineBuilder.BuildPipeline();
-        var image = _imageReader.ReadImageFromDirectory("straight_edge_1920x1080.jpg");
+        var image = _imageReader.ReadImageFromDirectory("dewarp_test/straight_edge_1920x1080.jpg");
         var result = await pipeline.RunPipelineWithInput(new RgbaImage { Image = image }, cancellationToken);
         // TODO image reading pipeline item?
         _imageReader.WriteImageToDirectory(result.Image, "output");
         
+        _logger?.LogInformation("Finished Test Service");
         await Task.CompletedTask;
     }
 
