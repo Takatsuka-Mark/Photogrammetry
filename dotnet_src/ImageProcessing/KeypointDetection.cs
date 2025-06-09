@@ -1,7 +1,8 @@
-using System.Reflection.Metadata;
 using ImageProcessing.Abstractions;
+using ImageProcessing.Options;
 using Images.Abstractions;
 using Images.Abstractions.Pixels;
+using Microsoft.Extensions.Options;
 
 namespace ImageProcessing;
 
@@ -9,8 +10,6 @@ namespace ImageProcessing;
 // Using FAST
 public class KeypointDetection
 {
-    private readonly float _threshold;
-
     // TODO determine if there's a better way to store this
     private readonly Matrix<int> _bresenhamCircle3 = Matrix<int>.FromRowMajorArray(new[,]
     {
@@ -23,18 +22,18 @@ public class KeypointDetection
     private readonly Matrix<int> _bresenhamCircle3T;
     private readonly Matrix<int> _miniBresenhamCircle3T;
     private readonly List<(Coordinate, Coordinate)> _gaussianKeypairs;
+    private readonly KeypointDetectionOptions _options;
 
-    public KeypointDetection(float threshold, int gaussianStdev, int numGaussians)
+    public KeypointDetection(IOptions<KeypointDetectionOptions> options)
     {
+        _options = options.Value;
         // FAST (Features from Accelerated Segment Test) keypoint detector
-        // Since grayscale is a float from 0 to 1, setting the threshold to a float. Could convert to a int [0, 255] instead (like original)
-        _threshold = threshold; // The difference between point's intensity for it to be considered a keypoint
         _bresenhamCircle3T = _bresenhamCircle3.Transpose();
         _miniBresenhamCircle3T = _miniBresenhamCircle3.Transpose();
         var utils = new Utils();
 
-        _gaussianKeypairs = Enumerable.Range(0, numGaussians)
-            .Select(_ => utils.NextGaussianPair(gaussianStdev)).ToList();
+        _gaussianKeypairs = Enumerable.Range(0, _options.NumGaussianPairs)
+            .Select(_ => utils.NextGaussianPair(_options.GaussianStandardDeviation)).ToList();
     }
 
     public List<Keypoint> Detect(Matrix<Grayscale> image)
@@ -179,6 +178,6 @@ public class KeypointDetection
 
     internal bool InThreshold(float intensity, float testIntensity)
     {
-        return testIntensity > intensity - _threshold && testIntensity < intensity + _threshold;
+        return testIntensity > intensity - _options.Threshold && testIntensity < intensity + _options.Threshold;
     }
 }

@@ -60,9 +60,6 @@ public class Program
         // var configuration = SetupConfiguration();
         // var imageReader = new LocalImageReader(configuration);
         // Dewarping tests
-        // var image = imageReader.ReadImageFromDirectory("straight_edge_1920x1080.jpg");
-        // var result = TestDeWarp(image);
-        // imageReader.WriteImageToDirectory(result, "output");
 
         // Keypoint Detection Tests
         // var image = imageReader.ReadImageFromDirectory("15pt_star.png");
@@ -96,21 +93,6 @@ public class Program
 
         // Console.WriteLine($"Elapsed: {sw.Elapsed}");
     }
-
-    // public static Matrix<Rgba> TestDeWarp(Matrix<Rgba> inputImage)
-    // {
-    //     var swNoIo = new Stopwatch();
-    //     swNoIo.Start();
-    //     var deWarp = new DeWarp(new DeWarpOptions{Height = 1080, Width = 1920 });
-    //     var distortionMatrix = deWarp.GetDistortionMatrix(new[] { 3e-4, 1e-7, 0, 0, 0 });
-    //     var distMatTime = swNoIo.Elapsed;
-    //     swNoIo.Restart();
-    //
-    //     var result = DeWarp.ApplyDistortionMat(inputImage, distortionMatrix);
-    //
-    //     Console.WriteLine($"Elapsed while de-warping: Generating Distortion Map: {distMatTime}, Applying: {swNoIo.Elapsed}");
-    //     return result;
-    // }
 
     public static void TestKeypointDetection(LocalImageReader imageReader, Matrix<Rgba> inputImage)
     {
