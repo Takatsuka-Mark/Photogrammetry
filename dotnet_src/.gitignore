@@ -38,3 +38,5 @@ artifacts/
 
 *.ply
 *.png
+
+test_outputs/

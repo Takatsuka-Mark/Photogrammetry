@@ -94,166 +94,166 @@ public class Program
         // Console.WriteLine($"Elapsed: {sw.Elapsed}");
     }
 
-    public static void TestKeypointDetection(LocalImageReader imageReader, Matrix<Rgba> inputImage)
-    {
-        var swNoIo = new Stopwatch();
-        swNoIo.Start();
-
-        var keypointDetector = new KeypointDetection(0.5f, 50, 256);
-
-        var initializeTime = swNoIo.Elapsed;
-        swNoIo.Restart();
-
-        // TODO note this conversion ignores `a`
-        var bwImage = inputImage.Convert(Grayscale.FromRgba);
-        var keypoints = keypointDetector.Detect(bwImage);
-        // TODO there are better ways to store these points. Maybe with spatial hashing?
-
-        Console.WriteLine($"Elapsed while detecting keypoints: Initialize: {initializeTime}, Detecting: {swNoIo.Elapsed}");
-        Console.WriteLine($"Found: {keypoints.Count} key points");
-
-        foreach (var keypoint in keypoints)
-        {
-            inputImage.DrawSquare(keypoint.Coordinate.X, keypoint.Coordinate.Y,
-                5, new Rgba { A = 127, B = 255, G = 0, R = 0 });
-        }
-
-        // TODO probably change the name of this image reader...
-        imageReader.WriteImageToDirectory(inputImage, "dotnet_keypoints");
-    }
-
-    public static void TestRedundantKeypointElimination(LocalImageReader imageReader, Matrix<Rgba> inputImage)
-    {
-        var swNoIo = new Stopwatch();
-        swNoIo.Start();
-
-        var keypointDetector = new KeypointDetection(0.2f, 50, 256);
-
-        var initializeTime = swNoIo.Elapsed;
-        swNoIo.Restart();
-
-        // TODO note this conversion ignores `a`
-        var bwImage = inputImage.Convert(Grayscale.FromRgba);
-        var keypoints = keypointDetector.Detect(bwImage);
-        // TODO there are better ways to store these points. Maybe with spatial hashing?
-
-        Console.WriteLine($"Elapsed while detecting keypoints: Initialize: {initializeTime}, Detecting: {swNoIo.Elapsed}");
-        Console.WriteLine($"Found: {keypoints.Count} key points");
-
-        // TODO param is totally arbitrary and not research based. Fits for 15pt star.
-        var rke = new RedundantKeypointEliminator((int)(inputImage.Dimensions.Width * 0.015D));
-
-        swNoIo.Restart();
-        keypoints = rke.EliminateRedundantKeypoints(keypoints);
-        Console.WriteLine($"Reduced to {keypoints.Count} key points in {swNoIo.Elapsed}");
-
-        foreach (var keypoint in keypoints)
-        {
-            inputImage.DrawSquare(keypoint.Coordinate.X, keypoint.Coordinate.Y,
-                5, new Rgba { A = 127, B = 255, G = 0, R = 0 });
-        }
-
-        // TODO probably change the name of this image reader...
-        imageReader.WriteImageToDirectory(inputImage, "dotnet_keypoints");
-    }
-
-    public static void TestKeypointMatching(LocalImageReader imageReader, Matrix<Rgba> inputImage1, Matrix<Rgba> inputImage2)
-    {
-        var swNoIo = new Stopwatch();
-        swNoIo.Start();
-
-        var keypointDetector = new KeypointDetection(0.2f, 50, 256);
-        var rke = new RedundantKeypointEliminator((int)(inputImage1.Dimensions.Width * 0.015f));
-
-        var bwImage1 = inputImage1.Convert(Grayscale.FromRgba);
-        var keypoints1 = rke.EliminateRedundantKeypoints(keypointDetector.Detect(bwImage1));
-
-        var bwImage2 = inputImage2.Convert(Grayscale.FromRgba);
-        var keypoints2 = rke.EliminateRedundantKeypoints(keypointDetector.Detect(bwImage2));
-
-        var keypointMatching = new KeypointMatching(100);
-        var matchedPairs = keypointMatching.MatchKeypoints(keypoints1, keypoints2);
-
-        // foreach (var keypointPair in matchedPairs)
-        // {
-        //     Console.WriteLine($"Keypoint1: {keypointPair.Keypoint1}, keypoint2: {keypointPair.Keypoint2}");
-        // }
-
-        System.Console.WriteLine($"Found {matchedPairs.Count} matching keypoint pairs");
-
-        var outputImage = new Matrix<Rgba>(new MatrixDimensions{Width = inputImage1.Dimensions.Width * 2, Height = inputImage1.Dimensions.Height});
-
-        // Copy images to output
-        for (var x = 0; x < inputImage1.Dimensions.Width; x += 1)
-        {
-            for (var y = 0; y < inputImage1.Dimensions.Height; y += 1)
-            {
-                outputImage[x, y] = inputImage1[x, y];
-            }
-        }
-
-        for (var x = 0; x < inputImage1.Dimensions.Width; x += 1)
-        {
-            for (var y = 0; y < inputImage1.Dimensions.Height; y += 1)
-            {
-                outputImage[x + inputImage1.Dimensions.Width, y] = inputImage2[x, y];
-            }
-        }
-
-        foreach (var keypointPair in matchedPairs)
-        {
-            var k2Coordinate = new Coordinate
-            {
-                X = keypointPair.Keypoint2.Coordinate.X + inputImage1.Dimensions.Width,
-                Y = keypointPair.Keypoint2.Coordinate.Y
-            };
-            outputImage.DrawLine(keypointPair.Keypoint1.Coordinate, k2Coordinate, new Rgba { R = 100, A = 255 });
-        }
-
-        imageReader.WriteImageToDirectory(outputImage, "dotnet_paired_keypoints");
-    }
-
-    public static void EstimateCameraPose(Matrix<Rgba> inputImage1, Matrix<Rgba> inputImage2)
-    {
-        var swNoIo = new Stopwatch();
-        swNoIo.Start();
-
-        var keypointDetector = new KeypointDetection(0.2f, 50, 256);
-        var rke = new RedundantKeypointEliminator((int)(inputImage1.Dimensions.Width * 0.015f));
-
-        var bwImage1 = inputImage1.Convert(Grayscale.FromRgba);
-        var keypoints1 = rke.EliminateRedundantKeypoints(keypointDetector.Detect(bwImage1));
-
-        var bwImage2 = inputImage2.Convert(Grayscale.FromRgba);
-        var keypoints2 = rke.EliminateRedundantKeypoints(keypointDetector.Detect(bwImage2));
-
-        System.Console.WriteLine($"Found {keypoints1.Count} keypoints from Image 1");
-        System.Console.WriteLine($"Found {keypoints2.Count} keypoints from Image 2");
-
-        var keypointMatching = new KeypointMatching(100);
-        var matchedPairs = keypointMatching.MatchKeypoints(keypoints1, keypoints2);
-
-        var cpe = new CameraPoseEstimation();
-
-        var (samples, fundamentalMatrix) = cpe.GetFundamentalMatrix(matchedPairs, 2000, 32, 0.001f);
-
-        var errors = new List<float>();
-
-        foreach (var sample in samples)
-        {
-            var kp1Mat = MathNet.Numerics.LinearAlgebra.Vector<float>.Build.DenseOfArray(
-                [sample.Keypoint2.Coordinate.X, sample.Keypoint2.Coordinate.Y, 1]);
-            var kp2Mat = MathNet.Numerics.LinearAlgebra.Vector<float>.Build.DenseOfArray(
-                [sample.Keypoint1.Coordinate.X, sample.Keypoint1.Coordinate.Y, 1]);
-
-            var result = fundamentalMatrix.Multiply(kp1Mat).DotProduct(kp2Mat);
-            // var result = kp1Mat.ToColumnMatrix().Multiply(fundamentalMatrix).Multiply(kp2Mat);
-
-            errors.Add(Math.Abs(result));
-        }
-
-        System.Console.WriteLine($"Average Error: {errors.Mean()}");
-
-        cpe.EstimateCameraPose(samples, fundamentalMatrix);
-    }
+    // public static void TestKeypointDetection(LocalImageReader imageReader, Matrix<Rgba> inputImage)
+    // {
+    //     var swNoIo = new Stopwatch();
+    //     swNoIo.Start();
+    //
+    //     var keypointDetector = new KeypointDetection(0.5f, 50, 256);
+    //
+    //     var initializeTime = swNoIo.Elapsed;
+    //     swNoIo.Restart();
+    //
+    //     // TODO note this conversion ignores `a`
+    //     var bwImage = inputImage.Convert(Grayscale.FromRgba);
+    //     var keypoints = keypointDetector.Detect(bwImage);
+    //     // TODO there are better ways to store these points. Maybe with spatial hashing?
+    //
+    //     Console.WriteLine($"Elapsed while detecting keypoints: Initialize: {initializeTime}, Detecting: {swNoIo.Elapsed}");
+    //     Console.WriteLine($"Found: {keypoints.Count} key points");
+    //
+    //     foreach (var keypoint in keypoints)
+    //     {
+    //         inputImage.DrawSquare(keypoint.Coordinate.X, keypoint.Coordinate.Y,
+    //             5, new Rgba { A = 127, B = 255, G = 0, R = 0 });
+    //     }
+    //
+    //     // TODO probably change the name of this image reader...
+    //     imageReader.WriteImageToDirectory(inputImage, "dotnet_keypoints");
+    // }
+    //
+    // public static void TestRedundantKeypointElimination(LocalImageReader imageReader, Matrix<Rgba> inputImage)
+    // {
+    //     var swNoIo = new Stopwatch();
+    //     swNoIo.Start();
+    //
+    //     var keypointDetector = new KeypointDetection(0.2f, 50, 256);
+    //
+    //     var initializeTime = swNoIo.Elapsed;
+    //     swNoIo.Restart();
+    //
+    //     // TODO note this conversion ignores `a`
+    //     var bwImage = inputImage.Convert(Grayscale.FromRgba);
+    //     var keypoints = keypointDetector.Detect(bwImage);
+    //     // TODO there are better ways to store these points. Maybe with spatial hashing?
+    //
+    //     Console.WriteLine($"Elapsed while detecting keypoints: Initialize: {initializeTime}, Detecting: {swNoIo.Elapsed}");
+    //     Console.WriteLine($"Found: {keypoints.Count} key points");
+    //
+    //     // TODO param is totally arbitrary and not research based. Fits for 15pt star.
+    //     var rke = new RedundantKeypointEliminator((int)(inputImage.Dimensions.Width * 0.015D));
+    //
+    //     swNoIo.Restart();
+    //     keypoints = rke.EliminateRedundantKeypoints(keypoints);
+    //     Console.WriteLine($"Reduced to {keypoints.Count} key points in {swNoIo.Elapsed}");
+    //
+    //     foreach (var keypoint in keypoints)
+    //     {
+    //         inputImage.DrawSquare(keypoint.Coordinate.X, keypoint.Coordinate.Y,
+    //             5, new Rgba { A = 127, B = 255, G = 0, R = 0 });
+    //     }
+    //
+    //     // TODO probably change the name of this image reader...
+    //     imageReader.WriteImageToDirectory(inputImage, "dotnet_keypoints");
+    // }
+    //
+    // public static void TestKeypointMatching(LocalImageReader imageReader, Matrix<Rgba> inputImage1, Matrix<Rgba> inputImage2)
+    // {
+    //     var swNoIo = new Stopwatch();
+    //     swNoIo.Start();
+    //
+    //     var keypointDetector = new KeypointDetection(0.2f, 50, 256);
+    //     var rke = new RedundantKeypointEliminator((int)(inputImage1.Dimensions.Width * 0.015f));
+    //
+    //     var bwImage1 = inputImage1.Convert(Grayscale.FromRgba);
+    //     var keypoints1 = rke.EliminateRedundantKeypoints(keypointDetector.Detect(bwImage1));
+    //
+    //     var bwImage2 = inputImage2.Convert(Grayscale.FromRgba);
+    //     var keypoints2 = rke.EliminateRedundantKeypoints(keypointDetector.Detect(bwImage2));
+    //
+    //     var keypointMatching = new KeypointMatching(100);
+    //     var matchedPairs = keypointMatching.MatchKeypoints(keypoints1, keypoints2);
+    //
+    //     // foreach (var keypointPair in matchedPairs)
+    //     // {
+    //     //     Console.WriteLine($"Keypoint1: {keypointPair.Keypoint1}, keypoint2: {keypointPair.Keypoint2}");
+    //     // }
+    //
+    //     System.Console.WriteLine($"Found {matchedPairs.Count} matching keypoint pairs");
+    //
+    //     var outputImage = new Matrix<Rgba>(new MatrixDimensions{Width = inputImage1.Dimensions.Width * 2, Height = inputImage1.Dimensions.Height});
+    //
+    //     // Copy images to output
+    //     for (var x = 0; x < inputImage1.Dimensions.Width; x += 1)
+    //     {
+    //         for (var y = 0; y < inputImage1.Dimensions.Height; y += 1)
+    //         {
+    //             outputImage[x, y] = inputImage1[x, y];
+    //         }
+    //     }
+    //
+    //     for (var x = 0; x < inputImage1.Dimensions.Width; x += 1)
+    //     {
+    //         for (var y = 0; y < inputImage1.Dimensions.Height; y += 1)
+    //         {
+    //             outputImage[x + inputImage1.Dimensions.Width, y] = inputImage2[x, y];
+    //         }
+    //     }
+    //
+    //     foreach (var keypointPair in matchedPairs)
+    //     {
+    //         var k2Coordinate = new Coordinate
+    //         {
+    //             X = keypointPair.Keypoint2.Coordinate.X + inputImage1.Dimensions.Width,
+    //             Y = keypointPair.Keypoint2.Coordinate.Y
+    //         };
+    //         outputImage.DrawLine(keypointPair.Keypoint1.Coordinate, k2Coordinate, new Rgba { R = 100, A = 255 });
+    //     }
+    //
+    //     imageReader.WriteImageToDirectory(outputImage, "dotnet_paired_keypoints");
+    // }
+    //
+    // public static void EstimateCameraPose(Matrix<Rgba> inputImage1, Matrix<Rgba> inputImage2)
+    // {
+    //     var swNoIo = new Stopwatch();
+    //     swNoIo.Start();
+    //
+    //     var keypointDetector = new KeypointDetection(0.2f, 50, 256);
+    //     var rke = new RedundantKeypointEliminator((int)(inputImage1.Dimensions.Width * 0.015f));
+    //
+    //     var bwImage1 = inputImage1.Convert(Grayscale.FromRgba);
+    //     var keypoints1 = rke.EliminateRedundantKeypoints(keypointDetector.Detect(bwImage1));
+    //
+    //     var bwImage2 = inputImage2.Convert(Grayscale.FromRgba);
+    //     var keypoints2 = rke.EliminateRedundantKeypoints(keypointDetector.Detect(bwImage2));
+    //
+    //     System.Console.WriteLine($"Found {keypoints1.Count} keypoints from Image 1");
+    //     System.Console.WriteLine($"Found {keypoints2.Count} keypoints from Image 2");
+    //
+    //     var keypointMatching = new KeypointMatching(100);
+    //     var matchedPairs = keypointMatching.MatchKeypoints(keypoints1, keypoints2);
+    //
+    //     var cpe = new CameraPoseEstimation();
+    //
+    //     var (samples, fundamentalMatrix) = cpe.GetFundamentalMatrix(matchedPairs, 2000, 32, 0.001f);
+    //
+    //     var errors = new List<float>();
+    //
+    //     foreach (var sample in samples)
+    //     {
+    //         var kp1Mat = MathNet.Numerics.LinearAlgebra.Vector<float>.Build.DenseOfArray(
+    //             [sample.Keypoint2.Coordinate.X, sample.Keypoint2.Coordinate.Y, 1]);
+    //         var kp2Mat = MathNet.Numerics.LinearAlgebra.Vector<float>.Build.DenseOfArray(
+    //             [sample.Keypoint1.Coordinate.X, sample.Keypoint1.Coordinate.Y, 1]);
+    //
+    //         var result = fundamentalMatrix.Multiply(kp1Mat).DotProduct(kp2Mat);
+    //         // var result = kp1Mat.ToColumnMatrix().Multiply(fundamentalMatrix).Multiply(kp2Mat);
+    //
+    //         errors.Add(Math.Abs(result));
+    //     }
+    //
+    //     System.Console.WriteLine($"Average Error: {errors.Mean()}");
+    //
+    //     cpe.EstimateCameraPose(samples, fundamentalMatrix);
+    // }
 }

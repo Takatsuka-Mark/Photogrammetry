@@ -30,4 +30,8 @@
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
     </ItemGroup>
+
+    <ItemGroup>
+        <None Include="test_data\**\*.*" CopyToOutputDirectory="PreserveNewest" />
+    </ItemGroup>
 </Project>
