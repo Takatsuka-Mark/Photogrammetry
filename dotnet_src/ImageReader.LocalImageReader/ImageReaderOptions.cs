@@ -1,18 +1,15 @@
+using System.ComponentModel.DataAnnotations;
 using Framework;
 using Microsoft.Extensions.Configuration;
 
 namespace ImageReader.LocalImageReader;
 
-public class ImageReaderOptions : BaseOptions
+public sealed class ImageReaderOptions
 {
-    private const string Section = "image_reader";
-    
-    public string RootDirectory { get; init; }
-    public string RootOutputDirectory { get; init; }
-    
-    public ImageReaderOptions(IConfiguration configuration)
-    {
-        RootDirectory = GetRequired(configuration, Section, "root_directory");
-        RootOutputDirectory = GetRequired(configuration, Section, "root_output_directory");
-    }
+    public const string Section = "ImageReader";
+
+    [Required]
+    public required string RootDirectory { get; init; }
+    [Required]
+    public required string RootOutputDirectory { get; init; }
 }

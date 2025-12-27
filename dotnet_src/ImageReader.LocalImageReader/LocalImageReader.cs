@@ -3,6 +3,7 @@ using Images.Abstractions;
 using SixLabors.ImageSharp.PixelFormats;
 using Images.Abstractions.Pixels;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats;
 
@@ -13,16 +14,16 @@ public class LocalImageReader
 {
     private readonly ImageReaderOptions _options;
 
-    public LocalImageReader(IConfiguration configuration)
+    public LocalImageReader(IOptions<ImageReaderOptions> imageReaderOptions)
     {
-        _options = new ImageReaderOptions(configuration);
+        _options = imageReaderOptions.Value;
     }
 
     public Images.Abstractions.Matrix<Rgba> ReadImageFromDirectory(string filename)
     {
 
         var rawImage = Image.Load<Rgba64>(new DecoderOptions{SkipMetadata = false}, $"{_options.RootDirectory}/{filename}");
-        var myImage = new Images.Abstractions.Matrix<Rgba>(new MatrixDimensions(rawImage.Width, rawImage.Height));
+        var myImage = new Images.Abstractions.Matrix<Rgba>(new MatrixDimensions{Width = rawImage.Width, Height = rawImage.Height});
         
         for (var x = 0; x < rawImage.Width; x++)
         {
@@ -40,15 +41,15 @@ public class LocalImageReader
         }
 
         // TODO this is a bigtime hack.
-        if (filename.EndsWith(".jpg"))
-            return myImage.Transpose();
+        // if (filename.EndsWith(".jpg"))
+        //     return myImage.Transpose();
 
         return myImage;
     }
 
     public void WriteImageToDirectory(Images.Abstractions.Matrix<Rgba> rawImage, string filename)
     {
-
+        // TODO should probably move to a different class...
         using (var image = new SixLabors.ImageSharp.Image<Rgba64>(rawImage.Dimensions.Width, rawImage.Dimensions.Height))
         {
             for (var x = 0; x < rawImage.Dimensions.Width; x++)
@@ -60,7 +61,14 @@ public class LocalImageReader
                 }
             }
 
-            image.SaveAsBmp($"{_options.RootOutputDirectory}/{filename}.bmp");
+            var file = new FileInfo($"{_options.RootOutputDirectory}/{filename}.bmp");
+
+            if (!file.Directory?.Exists ?? false)
+            { 
+                Directory.CreateDirectory(file.Directory.FullName);
+            }
+
+            image.SaveAsBmp(file.FullName);
         }
     }
 }

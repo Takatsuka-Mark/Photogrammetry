@@ -55,7 +55,7 @@ public class Matrix<TData>
     public Matrix<TData> Transpose()
     {
         // TODO should probably build a way to do this without checks.
-        var transposedMatrix = new Matrix<TData>(new MatrixDimensions(Dimensions.Height, Dimensions.Width));
+        var transposedMatrix = new Matrix<TData>(new MatrixDimensions{Height = Dimensions.Width, Width = Dimensions.Height});
 
         for (var y = 0; y < Dimensions.Height; y++)
         {

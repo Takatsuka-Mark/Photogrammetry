@@ -1,18 +1,20 @@
 using ImageProcessing.Abstractions;
+using ImageProcessing.Options;
 using Images.Abstractions;
 using Images.Abstractions.Pixels;
 using MathNet.Numerics.RootFinding;
+using Microsoft.Extensions.Options;
 
 namespace ImageProcessing;
 
 public class DeWarp
 {
-    private readonly MatrixDimensions _dimensions;
+    private readonly DeWarpOptions _deWarpOptions;
     private readonly Dictionary<int, double> _rd2ToRootCache = new();
 
-    public DeWarp(MatrixDimensions dimensions)
+    public DeWarp(IOptions<DeWarpOptions> deWarpOptions)
     {
-        _dimensions = dimensions;
+        _deWarpOptions = deWarpOptions.Value;
     }
 
     public static Matrix<TPixel> ApplyDistortionMat<TPixel>(Matrix<TPixel> image, DistortionMatrix distortionMatrix)
@@ -35,23 +37,26 @@ public class DeWarp
         return resultImage;
     }
     
-    public DistortionMatrix GetDistortionMatrix(double[] distortionCoefficients)
+    public DistortionMatrix GetDistortionMatrix()
     {
+        // TODO could just store the matrix in a Lazy<T>.
+        // But, note that the matrix might already be stored somewhere
+        
         // TODO we may just want to make this static
         // TODO implement caching for the matrix.
-        if (distortionCoefficients.Length != 5)
+        if (_deWarpOptions.DistortionCoefficients.Length != 5)
              // TODO is there a way we can force this through params, without requiring 5 params? Perhaps it's own class...
             throw new ArgumentException("You must pass exactly 5 distortion coefficients");
         
-        var distortionMatrix = new DistortionMatrix(_dimensions);
+        var distortionMatrix = new DistortionMatrix(_deWarpOptions.MatrixDimensions);
 
         // TODO think about how these are being cast
-        var x0 = _dimensions.Width / 2d;
-        var y0 = _dimensions.Height / 2d;
+        var x0 = _deWarpOptions.MatrixDimensions.Width / 2d;
+        var y0 = _deWarpOptions.MatrixDimensions.Height / 2d;
         
-        for (var u = 0; u < _dimensions.Width; u ++)
+        for (var u = 0; u < _deWarpOptions.MatrixDimensions.Width; u ++)
         {
-            for (var v = 0; v < _dimensions.Height; v++)
+            for (var v = 0; v < _deWarpOptions.MatrixDimensions.Height; v++)
             {
                 var x = (int)(u - x0);
                 var y = (int)(v - y0);
@@ -62,11 +67,11 @@ public class DeWarp
                 {
                     var rd = Math.Sqrt(rd2);
                 
-                    var b = (rd * distortionCoefficients[3] - distortionCoefficients[0]) /
-                            (rd * distortionCoefficients[4] - distortionCoefficients[1]);
-                    var c = (rd * distortionCoefficients[2] - 1) /
-                            (rd * distortionCoefficients[4] - distortionCoefficients[1]);
-                    var d = rd / (rd * distortionCoefficients[4] - distortionCoefficients[1]);
+                    var b = (rd * _deWarpOptions.DistortionCoefficients[3] - _deWarpOptions.DistortionCoefficients[0]) /
+                            (rd * _deWarpOptions.DistortionCoefficients[4] - _deWarpOptions.DistortionCoefficients[1]);
+                    var c = (rd * _deWarpOptions.DistortionCoefficients[2] - 1) /
+                            (rd * _deWarpOptions.DistortionCoefficients[4] - _deWarpOptions.DistortionCoefficients[1]);
+                    var d = rd / (rd * _deWarpOptions.DistortionCoefficients[4] - _deWarpOptions.DistortionCoefficients[1]);
                 
                     // TODO write own program to calculate roots
                     var (root1, root2, root3) = Cubic.RealRoots(d, c, b); // TODO what order should these be entered?

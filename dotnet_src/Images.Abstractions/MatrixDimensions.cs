@@ -2,15 +2,10 @@ namespace Images.Abstractions;
 
 public class MatrixDimensions
 {
-    public MatrixDimensions(int width, int height)
-    {
-        // TODO maybe just rename these all to dim 0 and dim 1
-        Width = width;
-        Height = height;
-    }
+    // TODO maybe just rename these all to dim 0 and dim 1
 
-    public int Width { get; }
-    public int Height { get; }
+    public required int Width { get; init; }
+    public required int Height { get; init; }
 
     protected bool Equals(MatrixDimensions other)
     {
@@ -28,5 +23,10 @@ public class MatrixDimensions
     public override int GetHashCode()
     {
         return HashCode.Combine(Width, Height);
+    }
+
+    public override string ToString()
+    {
+        return $"Width: {Width}, Height: {Height}";
     }
 }
