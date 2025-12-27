@@ -10,12 +10,15 @@ public class Matrix<TDataType> : IMatrix<TDataType>
     {
     }
 
-    public Matrix(MatrixDimensions matrixDimensions, TDataType emptyFill)
+    public Matrix(MatrixDimensions matrixDimensions, TDataType emptyFill) : this(matrixDimensions)
+    {
+        Fill(emptyFill);
+    }
+    
+    public Matrix(MatrixDimensions matrixDimensions)
     {
         _matrixDimensions = matrixDimensions;
         _data = new TDataType[matrixDimensions.Rows, matrixDimensions.Cols];
-
-        Fill(emptyFill);
     }
 
     # region Accessors
@@ -59,13 +62,13 @@ public class Matrix<TDataType> : IMatrix<TDataType>
         }
     }
 
-    public void MapAll(Func<(int row, int col), TDataType, TDataType> mappingFunction)
+    public void MapAll(Func<(uint row, uint col), TDataType, TDataType> mappingFunction)
     {
         for (var row = 0; row < _matrixDimensions.Rows; row += 1)
         {
             for (var col = 0; col < _matrixDimensions.Cols; col += 1)
             {
-                _data[row, col] = mappingFunction((row, col), _data[row, col]);
+                _data[row, col] = mappingFunction(((uint)row, (uint)col), _data[row, col]);
             }
         }
     }
@@ -77,10 +80,20 @@ public class Matrix<TDataType> : IMatrix<TDataType>
     public void Fill(TDataType fillData) => MapAll((_, _) => fillData);
 
     public IMatrix<TNewDataType> Convert<TNewDataType>(
-        Func<(int row, int col), TDataType, TNewDataType> mappingFunction)
+        Func<(uint row, uint col), TDataType, TNewDataType> mappingFunction)
     {
         // TODO think about how this should be done. Should each be set or can I have a ctor that takes a 2d array as input?
-        throw new NotImplementedException();
+        var newMatrix = new Matrix<TNewDataType>(_matrixDimensions);
+
+        for (var row = 0; row < _matrixDimensions.Rows; row += 1)
+        {
+            for (var col = 0; col < _matrixDimensions.Cols; col += 1)
+            {
+                newMatrix.Set((uint)row, (uint)col, mappingFunction(((uint)row, (uint)col), _data[row, col]));
+            }
+        }
+
+        return newMatrix;
     }
 
     #endregion

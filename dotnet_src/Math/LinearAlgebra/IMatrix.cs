@@ -11,7 +11,7 @@ public interface IMatrix<TDataType>
     public TDataType[] GetRow(uint rowIdx);
     public TDataType[] GetColumn(uint columnIdx);
     public IEnumerable<TDataType> IterateAll();
-    public void MapAll(Func<(int row, int col), TDataType, TDataType> mappingFunction);
+    public void MapAll(Func<(uint row, uint col), TDataType, TDataType> mappingFunction);
 
     #endregion
 
@@ -21,7 +21,7 @@ public interface IMatrix<TDataType>
     public void Fill(TDataType fillData);
 
     public IMatrix<TNewDataType> Convert<TNewDataType>(
-        Func<(int row, int col), TDataType, TNewDataType> mappingFunction);
+        Func<(uint row, uint col), TDataType, TNewDataType> mappingFunction);
 
     #endregion
 
