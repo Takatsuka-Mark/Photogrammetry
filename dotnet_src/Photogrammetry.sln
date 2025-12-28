@@ -21,6 +21,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Math", "Math", "{57A48865-8
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LinearAlgebra", "Math\LinearAlgebra\LinearAlgebra.csproj", "{CE0982C6-F803-4386-B279-C34E0D1A001E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ImageProcessing.Tests", "ImageProcessing.Tests\ImageProcessing.Tests.csproj", "{9BFAE078-7062-4BBE-8DA3-7E5F7EF5C95B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -62,6 +64,10 @@ Global
 		{CE0982C6-F803-4386-B279-C34E0D1A001E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CE0982C6-F803-4386-B279-C34E0D1A001E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CE0982C6-F803-4386-B279-C34E0D1A001E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9BFAE078-7062-4BBE-8DA3-7E5F7EF5C95B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9BFAE078-7062-4BBE-8DA3-7E5F7EF5C95B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9BFAE078-7062-4BBE-8DA3-7E5F7EF5C95B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9BFAE078-7062-4BBE-8DA3-7E5F7EF5C95B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{CE0982C6-F803-4386-B279-C34E0D1A001E} = {57A48865-863C-48AB-826A-9CF1AFE02F04}
