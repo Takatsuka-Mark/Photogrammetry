@@ -13,8 +13,8 @@
 
     <ItemGroup>
       <PackageReference Include="MathNet.Numerics" Version="5.0.0" />
-      <PackageReference Include="Microsoft.Extensions.Options" Version="9.0.4" />
-      <PackageReference Include="ScottPlot" Version="5.0.47" />
+      <PackageReference Include="Microsoft.Extensions.Options" Version="10.0.1" />
+      <PackageReference Include="ScottPlot" Version="5.1.57" />
     </ItemGroup>
 
 </Project>
