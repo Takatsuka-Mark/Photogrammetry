@@ -104,8 +104,18 @@ public class Matrix<TDataType> : IMatrix<TDataType>
 
     public IMatrix<TDataType> Transpose()
     {
-        // TODO need a better way to load data into new matrix. Additional, should consider switching to ushort for row and col.
-        throw new NotImplementedException();
+        // TODO need a better way to load data into new matrix.
+        var newMatrix = new Matrix<TDataType>(new MatrixDimensions { Rows = Dimensions.Cols, Cols = Dimensions.Rows });
+        
+        for (var row = 0; row < Dimensions.Rows; row += 1)
+        {
+            for (var col = 0; col < Dimensions.Cols; col += 1)
+            {
+                newMatrix[(ushort)col, (ushort)row] = _data[row, col];
+            }
+        }
+
+        return newMatrix;
     }
 
     #endregion

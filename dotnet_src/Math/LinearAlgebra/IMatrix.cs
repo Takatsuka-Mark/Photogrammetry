@@ -3,7 +3,7 @@ namespace LinearAlgebra;
 public interface IMatrix<TDataType>
 {
     # region Accessors
-
+    public TDataType this[ushort rowIds, ushort colIdx] { get; set; }
     public void Set(ushort rowIdx, ushort colIdx, TDataType data);
     public TDataType Get(ushort rowIdx, ushort colIdx);
 
