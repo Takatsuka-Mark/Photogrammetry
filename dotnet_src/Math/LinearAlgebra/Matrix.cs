@@ -5,7 +5,7 @@ public class Matrix<TDataType> : IMatrix<TDataType>
     public readonly MatrixDimensions Dimensions;
     private readonly TDataType[,] _data;
 
-    public Matrix(uint rows, uint cols, TDataType emptyFill) : this(new MatrixDimensions { Cols = cols, Rows = rows },
+    public Matrix(ushort rows, ushort cols, TDataType emptyFill) : this(new MatrixDimensions { Cols = cols, Rows = rows },
         emptyFill)
     {
     }
@@ -23,25 +23,25 @@ public class Matrix<TDataType> : IMatrix<TDataType>
 
     # region Accessors
 
-    public TDataType this[uint rowIdx, uint colIdx]
+    public TDataType this[ushort rowIdx, ushort colIdx]
     {
         get => Get(rowIdx, colIdx);
         set => Set(rowIdx, colIdx, value);
     }
 
-    public void Set(uint rowIdx, uint colIdx, TDataType data)
+    public void Set(ushort rowIdx, ushort colIdx, TDataType data)
     {
         AssertInBounds(rowIdx, colIdx);
         _data[rowIdx, colIdx] = data;
     }
 
-    public TDataType Get(uint rowIdx, uint colIdx)
+    public TDataType Get(ushort rowIdx, ushort colIdx)
     {
         AssertInBounds(rowIdx, colIdx);
         return _data[rowIdx, colIdx];
     }
 
-    public TDataType[] GetRow(uint rowIdx)
+    public TDataType[] GetRow(ushort rowIdx)
     {
         AssertRowInBounds(rowIdx);
         return Enumerable.Range(0, (int)Dimensions.Cols)
@@ -49,7 +49,7 @@ public class Matrix<TDataType> : IMatrix<TDataType>
             .ToArray();
     }
 
-    public TDataType[] GetColumn(uint columnIdx)
+    public TDataType[] GetColumn(ushort columnIdx)
     {
         AssertColInBounds(columnIdx);
         return Enumerable.Range(0, (int)Dimensions.Rows)
@@ -68,13 +68,13 @@ public class Matrix<TDataType> : IMatrix<TDataType>
         }
     }
 
-    public void MapAll(Func<(uint row, uint col), TDataType, TDataType> mappingFunction)
+    public void MapAll(Func<(ushort row, ushort col), TDataType, TDataType> mappingFunction)
     {
         for (var row = 0; row < Dimensions.Rows; row += 1)
         {
             for (var col = 0; col < Dimensions.Cols; col += 1)
             {
-                _data[row, col] = mappingFunction(((uint)row, (uint)col), _data[row, col]);
+                _data[row, col] = mappingFunction(((ushort)row, (ushort)col), _data[row, col]);
             }
         }
     }
@@ -86,7 +86,7 @@ public class Matrix<TDataType> : IMatrix<TDataType>
     public void Fill(TDataType fillData) => MapAll((_, _) => fillData);
 
     public IMatrix<TNewDataType> Convert<TNewDataType>(
-        Func<(uint row, uint col), TDataType, TNewDataType> mappingFunction)
+        Func<(ushort row, ushort col), TDataType, TNewDataType> mappingFunction)
     {
         // TODO think about how this should be done. Should each be set or can I have a ctor that takes a 2d array as input?
         var newMatrix = new Matrix<TNewDataType>(Dimensions);
@@ -95,7 +95,7 @@ public class Matrix<TDataType> : IMatrix<TDataType>
         {
             for (var col = 0; col < Dimensions.Cols; col += 1)
             {
-                newMatrix.Set((uint)row, (uint)col, mappingFunction(((uint)row, (uint)col), _data[row, col]));
+                newMatrix.Set((ushort)row, (ushort)col, mappingFunction(((ushort)row, (ushort)col), _data[row, col]));
             }
         }
 
@@ -104,6 +104,7 @@ public class Matrix<TDataType> : IMatrix<TDataType>
 
     public IMatrix<TDataType> Transpose()
     {
+        // TODO need a better way to load data into new matrix. Additional, should consider switching to ushort for row and col.
         throw new NotImplementedException();
     }
 
@@ -111,27 +112,27 @@ public class Matrix<TDataType> : IMatrix<TDataType>
 
     # region Validators
 
-    public bool InBounds(uint rowIdx, uint colIdx) => RowInBounds(rowIdx) && ColInBounds(colIdx);
+    public bool InBounds(ushort rowIdx, ushort colIdx) => RowInBounds(rowIdx) && ColInBounds(colIdx);
 
-    public bool RowInBounds(uint rowIdx) => rowIdx < Dimensions.Rows;
+    public bool RowInBounds(ushort rowIdx) => rowIdx < Dimensions.Rows;
 
-    public bool ColInBounds(uint colIdx) => colIdx < Dimensions.Cols;
+    public bool ColInBounds(ushort colIdx) => colIdx < Dimensions.Cols;
 
-    private void AssertInBounds(uint rowIdx, uint colIdx)
+    private void AssertInBounds(ushort rowIdx, ushort colIdx)
     {
         if (!InBounds(rowIdx, colIdx))
             throw new IndexOutOfRangeException(
                 $"({rowIdx} row, {colIdx} col) for matrix of size {Dimensions}");
     }
 
-    private void AssertRowInBounds(uint rowIdx)
+    private void AssertRowInBounds(ushort rowIdx)
     {
         if (!RowInBounds(rowIdx))
             throw new IndexOutOfRangeException(
                 $"({rowIdx} row) for matrix of size {Dimensions}");
     }
 
-    private void AssertColInBounds(uint colIdx)
+    private void AssertColInBounds(ushort colIdx)
     {
         if (!ColInBounds(colIdx))
             throw new IndexOutOfRangeException(

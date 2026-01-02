@@ -4,14 +4,14 @@ public interface IMatrix<TDataType>
 {
     # region Accessors
 
-    public void Set(uint rowIdx, uint colIdx, TDataType data);
-    public TDataType Get(uint rowIdx, uint colIdx);
+    public void Set(ushort rowIdx, ushort colIdx, TDataType data);
+    public TDataType Get(ushort rowIdx, ushort colIdx);
 
     // TODO change list return types?
-    public TDataType[] GetRow(uint rowIdx);
-    public TDataType[] GetColumn(uint columnIdx);
+    public TDataType[] GetRow(ushort rowIdx);
+    public TDataType[] GetColumn(ushort columnIdx);
     public IEnumerable<TDataType> IterateAll();
-    public void MapAll(Func<(uint row, uint col), TDataType, TDataType> mappingFunction);
+    public void MapAll(Func<(ushort row, ushort col), TDataType, TDataType> mappingFunction);
 
     #endregion
 
@@ -21,7 +21,7 @@ public interface IMatrix<TDataType>
     public void Fill(TDataType fillData);
 
     public IMatrix<TNewDataType> Convert<TNewDataType>(
-        Func<(uint row, uint col), TDataType, TNewDataType> mappingFunction);
+        Func<(ushort row, ushort col), TDataType, TNewDataType> mappingFunction);
 
     public IMatrix<TDataType> Transpose();
 
@@ -29,9 +29,9 @@ public interface IMatrix<TDataType>
 
     # region Validators
 
-    public bool InBounds(uint rowIdx, uint colIdx);
-    public bool RowInBounds(uint rowIdx);
-    public bool ColInBounds(uint colIdx);
+    public bool InBounds(ushort rowIdx, ushort colIdx);
+    public bool RowInBounds(ushort rowIdx);
+    public bool ColInBounds(ushort colIdx);
 
     #endregion
 }

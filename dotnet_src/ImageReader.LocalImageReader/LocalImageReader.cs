@@ -23,14 +23,14 @@ public class LocalImageReader
         var rawImage = Image.Load<SixLabors.ImageSharp.PixelFormats.Rgba64>(new DecoderOptions { SkipMetadata = false },
             $"{_options.RootDirectory}/{filename}");
         var matrix = new LinearAlgebra.Matrix<Rgba64>(new LinearAlgebra.MatrixDimensions
-            { Rows = (uint)rawImage.Height, Cols = (uint)rawImage.Width });
+            { Rows = (ushort)rawImage.Height, Cols = (ushort)rawImage.Width });
 
         for (var x = 0; x < rawImage.Width; x++)
         {
             for (var y = 0; y < rawImage.Height; y++)
             {
                 var originalPixel = rawImage[x, y];
-                matrix[(uint)x, (uint)y] = new Rgba64
+                matrix[(ushort)x, (ushort)y] = new Rgba64
                 {
                     R = originalPixel.R,
                     G = originalPixel.G,
@@ -81,7 +81,7 @@ public class LocalImageReader
             {
                 for (var y = 0; y < rawImage.Dimensions.Rows; y++)
                 {
-                    var originalPixel = rawImage[(uint)x, (uint)y];
+                    var originalPixel = rawImage[(ushort)x, (ushort)y];
                     image[x, y] = new SixLabors.ImageSharp.PixelFormats.Rgba64(originalPixel.R, originalPixel.G,
                         originalPixel.B, originalPixel.A);
                 }
