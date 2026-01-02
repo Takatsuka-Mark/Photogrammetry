@@ -1,8 +1,6 @@
 using System.Numerics;
 using Images.Abstractions;
-using SixLabors.ImageSharp.PixelFormats;
 using Images.Abstractions.Pixels;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats;
@@ -19,12 +17,39 @@ public class LocalImageReader
         _options = imageReaderOptions.Value;
     }
 
+    public LinearAlgebra.Matrix<Images.Abstractions.Pixels.Rgba64> ReadImageFromDirectoryV2(string filename)
+    {
+        // TODO fix this whole file path thing.
+        var rawImage = Image.Load<SixLabors.ImageSharp.PixelFormats.Rgba64>(new DecoderOptions { SkipMetadata = false },
+            $"{_options.RootDirectory}/{filename}");
+        var matrix = new LinearAlgebra.Matrix<Rgba64>(new LinearAlgebra.MatrixDimensions
+            { Rows = (uint)rawImage.Height, Cols = (uint)rawImage.Width });
+
+        for (var x = 0; x < rawImage.Width; x++)
+        {
+            for (var y = 0; y < rawImage.Height; y++)
+            {
+                var originalPixel = rawImage[x, y];
+                matrix[(uint)x, (uint)y] = new Rgba64
+                {
+                    R = originalPixel.R,
+                    G = originalPixel.G,
+                    B = originalPixel.B,
+                    A = originalPixel.A
+                };
+            }
+        }
+
+        return matrix;
+    }
+
     public Images.Abstractions.Matrix<Rgba> ReadImageFromDirectory(string filename)
     {
+        var rawImage = Image.Load<SixLabors.ImageSharp.PixelFormats.Rgba64>(new DecoderOptions { SkipMetadata = false },
+            $"{_options.RootDirectory}/{filename}");
+        var myImage = new Images.Abstractions.Matrix<Rgba>(new MatrixDimensions
+            { Width = rawImage.Width, Height = rawImage.Height });
 
-        var rawImage = Image.Load<Rgba64>(new DecoderOptions{SkipMetadata = false}, $"{_options.RootDirectory}/{filename}");
-        var myImage = new Images.Abstractions.Matrix<Rgba>(new MatrixDimensions{Width = rawImage.Width, Height = rawImage.Height});
-        
         for (var x = 0; x < rawImage.Width; x++)
         {
             for (var y = 0; y < rawImage.Height; y++)
@@ -47,24 +72,52 @@ public class LocalImageReader
         return myImage;
     }
 
-    public void WriteImageToDirectory(Images.Abstractions.Matrix<Rgba> rawImage, string filename)
+    public void WriteImageToDirectoryV2(LinearAlgebra.Matrix<Images.Abstractions.Pixels.Rgba64> rawImage, string filename)
     {
         // TODO should probably move to a different class...
-        using (var image = new SixLabors.ImageSharp.Image<Rgba64>(rawImage.Dimensions.Width, rawImage.Dimensions.Height))
+        using (var image = new SixLabors.ImageSharp.Image<SixLabors.ImageSharp.PixelFormats.Rgba64>((int)rawImage.Dimensions.Cols, (int)rawImage.Dimensions.Rows))
         {
-            for (var x = 0; x < rawImage.Dimensions.Width; x++)
+            for (var x = 0; x < rawImage.Dimensions.Cols; x++)
             {
-                for (var y = 0; y < rawImage.Dimensions.Height; y++)
+                for (var y = 0; y < rawImage.Dimensions.Rows; y++)
                 {
-                    var originalPixel = rawImage[x, y];
-                    image[x, y] = new Rgba64(new Vector4(originalPixel.R, originalPixel.G, originalPixel.B, originalPixel.A));
+                    var originalPixel = rawImage[(uint)x, (uint)y];
+                    image[x, y] = new SixLabors.ImageSharp.PixelFormats.Rgba64(originalPixel.R, originalPixel.G,
+                        originalPixel.B, originalPixel.A);
                 }
             }
 
             var file = new FileInfo($"{_options.RootOutputDirectory}/{filename}.bmp");
 
             if (!file.Directory?.Exists ?? false)
-            { 
+            {
+                Directory.CreateDirectory(file.Directory.FullName);
+            }
+
+            image.SaveAsBmp(file.FullName);
+        }
+    }
+    
+    public void WriteImageToDirectory(Images.Abstractions.Matrix<Rgba> rawImage, string filename)
+    {
+        // TODO should probably move to a different class...
+        using (var image =
+               new SixLabors.ImageSharp.Image<SixLabors.ImageSharp.PixelFormats.Rgba64>(rawImage.Dimensions.Width, rawImage.Dimensions.Height))
+        {
+            for (var x = 0; x < rawImage.Dimensions.Width; x++)
+            {
+                for (var y = 0; y < rawImage.Dimensions.Height; y++)
+                {
+                    var originalPixel = rawImage[x, y];
+                    image[x, y] = new SixLabors.ImageSharp.PixelFormats.Rgba64(new Vector4(originalPixel.R, originalPixel.G, originalPixel.B,
+                        originalPixel.A));
+                }
+            }
+
+            var file = new FileInfo($"{_options.RootOutputDirectory}/{filename}.bmp");
+
+            if (!file.Directory?.Exists ?? false)
+            {
                 Directory.CreateDirectory(file.Directory.FullName);
             }
 

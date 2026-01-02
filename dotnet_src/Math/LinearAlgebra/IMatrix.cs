@@ -23,6 +23,8 @@ public interface IMatrix<TDataType>
     public IMatrix<TNewDataType> Convert<TNewDataType>(
         Func<(uint row, uint col), TDataType, TNewDataType> mappingFunction);
 
+    public IMatrix<TDataType> Transpose();
+
     #endregion
 
     # region Validators
