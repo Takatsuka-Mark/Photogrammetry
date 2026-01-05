@@ -1,7 +1,6 @@
-using ImageProcessing.Abstractions;
 using ImageProcessing.Options;
-using Images.Abstractions;
 using Images.Abstractions.Pixels;
+using LinearAlgebra;
 using MathNet.Numerics.RootFinding;
 using Microsoft.Extensions.Options;
 
@@ -17,7 +16,7 @@ public class DeWarp
         _deWarpOptions = deWarpOptions.Value;
     }
 
-    public static Matrix<TPixel> ApplyDistortionMat<TPixel>(Matrix<TPixel> image, DistortionMatrix distortionMatrix)
+    public static Matrix<TPixel> ApplyDistortionMat<TPixel>(Matrix<TPixel> image, Matrix<Uv> distortionMatrix)
     {
         // TODO could move somewhere like on the distortion mat itself...
         if (!Equals(image.Dimensions, distortionMatrix.Dimensions))
@@ -25,19 +24,19 @@ public class DeWarp
 
         var resultImage = new Matrix<TPixel>(image.Dimensions);
 
-        for (var x = 0; x < image.Dimensions.Width; x++)
+        for (ushort x = 0; x < image.Dimensions.Cols; x++)
         {
-            for (var y = 0; y < image.Dimensions.Height; y++)
+            for (ushort y = 0; y < image.Dimensions.Rows; y++)
             {
                 var newPixel = distortionMatrix[x, y];
-                resultImage[x, y] = image[newPixel.U, newPixel.V];
+                resultImage[x, y] = image[(ushort)newPixel.U, (ushort)newPixel.V];
             }
         }
         
         return resultImage;
     }
     
-    public DistortionMatrix GetDistortionMatrix()
+    public Matrix<Uv> GetDistortionMatrix()
     {
         // TODO could just store the matrix in a Lazy<T>.
         // But, note that the matrix might already be stored somewhere
@@ -48,15 +47,15 @@ public class DeWarp
              // TODO is there a way we can force this through params, without requiring 5 params? Perhaps it's own class...
             throw new ArgumentException("You must pass exactly 5 distortion coefficients");
         
-        var distortionMatrix = new DistortionMatrix(_deWarpOptions.MatrixDimensions);
+        var distortionMatrix = new Matrix<Uv>(_deWarpOptions.MatrixDimensions);
 
         // TODO think about how these are being cast
-        var x0 = _deWarpOptions.MatrixDimensions.Width / 2d;
-        var y0 = _deWarpOptions.MatrixDimensions.Height / 2d;
+        var x0 = _deWarpOptions.MatrixDimensions.Cols / 2d;
+        var y0 = _deWarpOptions.MatrixDimensions.Rows / 2d;
         
-        for (var u = 0; u < _deWarpOptions.MatrixDimensions.Width; u ++)
+        for (ushort u = 0; u < _deWarpOptions.MatrixDimensions.Cols; u ++)
         {
-            for (var v = 0; v < _deWarpOptions.MatrixDimensions.Height; v++)
+            for (ushort v = 0; v < _deWarpOptions.MatrixDimensions.Rows; v++)
             {
                 var x = (int)(u - x0);
                 var y = (int)(v - y0);

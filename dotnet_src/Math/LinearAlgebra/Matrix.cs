@@ -59,9 +59,9 @@ public class Matrix<TDataType> : IMatrix<TDataType>
 
     public IEnumerable<TDataType> IterateAll()
     {
-        for (var row = 0; row < Dimensions.Rows; row += 1)
+        for (ushort row = 0; row < Dimensions.Rows; row += 1)
         {
-            for (var col = 0; col < Dimensions.Cols; col += 1)
+            for (ushort col = 0; col < Dimensions.Cols; col += 1)
             {
                 yield return _data[row, col];
             }
@@ -70,11 +70,11 @@ public class Matrix<TDataType> : IMatrix<TDataType>
 
     public void MapAll(Func<(ushort row, ushort col), TDataType, TDataType> mappingFunction)
     {
-        for (var row = 0; row < Dimensions.Rows; row += 1)
+        for (ushort row = 0; row < Dimensions.Rows; row += 1)
         {
-            for (var col = 0; col < Dimensions.Cols; col += 1)
+            for (ushort col = 0; col < Dimensions.Cols; col += 1)
             {
-                _data[row, col] = mappingFunction(((ushort)row, (ushort)col), _data[row, col]);
+                _data[row, col] = mappingFunction((row, col), _data[row, col]);
             }
         }
     }
@@ -91,11 +91,11 @@ public class Matrix<TDataType> : IMatrix<TDataType>
         // TODO think about how this should be done. Should each be set or can I have a ctor that takes a 2d array as input?
         var newMatrix = new Matrix<TNewDataType>(Dimensions);
 
-        for (var row = 0; row < Dimensions.Rows; row += 1)
+        for (ushort row = 0; row < Dimensions.Rows; row += 1)
         {
-            for (var col = 0; col < Dimensions.Cols; col += 1)
+            for (ushort col = 0; col < Dimensions.Cols; col += 1)
             {
-                newMatrix.Set((ushort)row, (ushort)col, mappingFunction(((ushort)row, (ushort)col), _data[row, col]));
+                newMatrix.Set(row, col, mappingFunction((row, col), _data[row, col]));
             }
         }
 
@@ -107,11 +107,11 @@ public class Matrix<TDataType> : IMatrix<TDataType>
         // TODO need a better way to load data into new matrix.
         var newMatrix = new Matrix<TDataType>(new MatrixDimensions { Rows = Dimensions.Cols, Cols = Dimensions.Rows });
         
-        for (var row = 0; row < Dimensions.Rows; row += 1)
+        for (ushort row = 0; row < Dimensions.Rows; row += 1)
         {
-            for (var col = 0; col < Dimensions.Cols; col += 1)
+            for (ushort col = 0; col < Dimensions.Cols; col += 1)
             {
-                newMatrix[(ushort)col, (ushort)row] = _data[row, col];
+                newMatrix[col, row] = _data[row, col];
             }
         }
 
@@ -147,6 +147,16 @@ public class Matrix<TDataType> : IMatrix<TDataType>
         if (!ColInBounds(colIdx))
             throw new IndexOutOfRangeException(
                 $"({colIdx} row) for matrix of size {Dimensions}");
+    }
+
+    private (ushort rowIdx, ushort colIdx) CastRowCol(int rowIdx, int colIdx)
+    {
+        if (rowIdx < 0 || rowIdx > short.MaxValue || colIdx < 0 || colIdx > short.MaxValue)
+        {
+            throw new IndexOutOfRangeException($"Cannot cast row and col from int to ushort ({rowIdx}, {colIdx})");
+        }
+
+        return ((ushort)rowIdx, (ushort)colIdx);
     }
 
     #endregion
