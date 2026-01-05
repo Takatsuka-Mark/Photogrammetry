@@ -6,6 +6,7 @@ using ImageProcessing;
 using ImageProcessing.Options;
 using ImageProcessing.Pipelines;
 using ImageProcessing.Pipelines.Items;
+using ImageProcessing.PipelineV2.Services;
 using ImageReader.LocalImageReader;
 using Images.Abstractions;
 using Images.Abstractions.Pixels;
@@ -41,6 +42,7 @@ public class Program
                 .AddHostedService<TestService>()
                 .AddSingleton<DeWarp>()
                 .AddSingleton<DeWarpItem>()
+                .AddSingleton<DeWarpProcessor>()
                 .AddSingleton<DeWarpSequentialPipeline.DeWarpSequentialPipelineBuilder>()
                 .AddSingleton<LocalImageReader>()
             ;

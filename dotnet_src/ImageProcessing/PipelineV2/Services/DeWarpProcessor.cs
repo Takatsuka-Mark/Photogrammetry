@@ -1,11 +1,9 @@
-using ImageProcessing.Pipelines.Items;
-using ImageProcessing.Pipelines.Messages;
 using Images.Abstractions.Pixels;
 using LinearAlgebra;
 
 namespace ImageProcessing.PipelineV2.Services;
 
-public class DeWarpProcessor : IProcessor<Matrix<RgbaImage>, Matrix<RgbaImage>>
+public class DeWarpProcessor : IProcessor<Matrix<Rgba64>, Matrix<Rgba64>>
 {
     private readonly DeWarp _deWarp;
     private readonly Lazy<Matrix<Uv>> _distortionMatrix;
@@ -30,7 +28,7 @@ public class DeWarpProcessor : IProcessor<Matrix<RgbaImage>, Matrix<RgbaImage>>
         Console.WriteLine("WARN: It appears the DeWarp service has been doubly initialed");
     }
 
-    public Matrix<RgbaImage> Process(Matrix<RgbaImage> matrix)
+    public Matrix<Rgba64> Process(Matrix<Rgba64> matrix)
     {
         return DeWarp.ApplyDistortionMat(matrix, _distortionMatrix.Value);
     }

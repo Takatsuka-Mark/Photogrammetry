@@ -24,9 +24,9 @@ public class DeWarp
 
         var resultImage = new Matrix<TPixel>(image.Dimensions);
 
-        for (ushort x = 0; x < image.Dimensions.Cols; x++)
+        for (ushort x = 0; x < image.Dimensions.Width; x++)
         {
-            for (ushort y = 0; y < image.Dimensions.Rows; y++)
+            for (ushort y = 0; y < image.Dimensions.Height; y++)
             {
                 var newPixel = distortionMatrix[x, y];
                 resultImage[x, y] = image[(ushort)newPixel.U, (ushort)newPixel.V];
@@ -50,12 +50,12 @@ public class DeWarp
         var distortionMatrix = new Matrix<Uv>(_deWarpOptions.MatrixDimensions);
 
         // TODO think about how these are being cast
-        var x0 = _deWarpOptions.MatrixDimensions.Cols / 2d;
-        var y0 = _deWarpOptions.MatrixDimensions.Rows / 2d;
+        var x0 = _deWarpOptions.MatrixDimensions.Width / 2d;
+        var y0 = _deWarpOptions.MatrixDimensions.Height / 2d;
         
-        for (ushort u = 0; u < _deWarpOptions.MatrixDimensions.Cols; u ++)
+        for (ushort u = 0; u < _deWarpOptions.MatrixDimensions.Width; u ++)
         {
-            for (ushort v = 0; v < _deWarpOptions.MatrixDimensions.Rows; v++)
+            for (ushort v = 0; v < _deWarpOptions.MatrixDimensions.Height; v++)
             {
                 var x = (int)(u - x0);
                 var y = (int)(v - y0);

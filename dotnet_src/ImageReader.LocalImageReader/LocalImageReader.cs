@@ -19,18 +19,19 @@ public class LocalImageReader
 
     public LinearAlgebra.Matrix<Images.Abstractions.Pixels.Rgba64> ReadImageFromDirectoryV2(string filename)
     {
+        // TODO check if 0,0 is the top left pixel.
         // TODO fix this whole file path thing.
         var rawImage = Image.Load<SixLabors.ImageSharp.PixelFormats.Rgba64>(new DecoderOptions { SkipMetadata = false },
             $"{_options.RootDirectory}/{filename}");
         var matrix = new LinearAlgebra.Matrix<Rgba64>(new LinearAlgebra.MatrixDimensions
-            { Rows = (ushort)rawImage.Height, Cols = (ushort)rawImage.Width });
+            { Height = (ushort)rawImage.Height, Width = (ushort)rawImage.Width });
 
-        for (var x = 0; x < rawImage.Width; x++)
+        for (ushort x = 0; x < rawImage.Width; x++)
         {
-            for (var y = 0; y < rawImage.Height; y++)
+            for (ushort y = 0; y < rawImage.Height; y++)
             {
                 var originalPixel = rawImage[x, y];
-                matrix[(ushort)x, (ushort)y] = new Rgba64
+                matrix[x, y] = new Rgba64
                 {
                     R = originalPixel.R,
                     G = originalPixel.G,
@@ -75,11 +76,11 @@ public class LocalImageReader
     public void WriteImageToDirectoryV2(LinearAlgebra.Matrix<Images.Abstractions.Pixels.Rgba64> rawImage, string filename)
     {
         // TODO should probably move to a different class...
-        using (var image = new SixLabors.ImageSharp.Image<SixLabors.ImageSharp.PixelFormats.Rgba64>((int)rawImage.Dimensions.Cols, (int)rawImage.Dimensions.Rows))
+        using (var image = new SixLabors.ImageSharp.Image<SixLabors.ImageSharp.PixelFormats.Rgba64>((int)rawImage.Dimensions.Width, (int)rawImage.Dimensions.Height))
         {
-            for (var x = 0; x < rawImage.Dimensions.Cols; x++)
+            for (var x = 0; x < rawImage.Dimensions.Width; x++)
             {
-                for (var y = 0; y < rawImage.Dimensions.Rows; y++)
+                for (var y = 0; y < rawImage.Dimensions.Height; y++)
                 {
                     var originalPixel = rawImage[(ushort)x, (ushort)y];
                     image[x, y] = new SixLabors.ImageSharp.PixelFormats.Rgba64(originalPixel.R, originalPixel.G,
