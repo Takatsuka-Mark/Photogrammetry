@@ -5,14 +5,14 @@ public class MatrixTests
     [Fact]
     public void TestCreate()
     {
-        var matrix = new Matrix<float>(new MatrixDimensions { Rows = 2, Cols = 2 });
+        var matrix = new Matrix<float>(new MatrixDimensions { Height = 2, Width = 2 });
         matrix.Get(0, 0);
     }
 
     [Fact]
     public void TestCreateWithFill()
     {
-        var matrix = new Matrix<float>(new MatrixDimensions { Rows = 2, Cols = 2 }, emptyFill: 0.67f);
+        var matrix = new Matrix<float>(new MatrixDimensions { Height = 2, Width = 2 }, emptyFill: 0.67f);
 
         foreach (var value in matrix.IterateAll())
         {
@@ -23,7 +23,7 @@ public class MatrixTests
     [Fact]
     public void TestFill()
     {
-        var matrix = new Matrix<float>(new MatrixDimensions { Rows = 2, Cols = 2 }, emptyFill: 0f);
+        var matrix = new Matrix<float>(new MatrixDimensions { Height = 2, Width = 2 }, emptyFill: 0f);
 
         foreach (var value in matrix.IterateAll())
         {
@@ -41,7 +41,7 @@ public class MatrixTests
     [Fact]
     public void TestTranspose()
     {
-        var matrix = new Matrix<float>(new MatrixDimensions { Rows = 2, Cols = 2 }, emptyFill: 0f)
+        var matrix = new Matrix<float>(new MatrixDimensions { Height = 2, Width = 2 }, emptyFill: 0f)
         {
             [0, 0] = 1f,
             [0, 1] = 2f,

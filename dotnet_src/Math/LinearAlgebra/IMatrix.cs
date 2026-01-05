@@ -3,15 +3,15 @@ namespace LinearAlgebra;
 public interface IMatrix<TDataType>
 {
     # region Accessors
-    public TDataType this[ushort rowIds, ushort colIdx] { get; set; }
-    public void Set(ushort rowIdx, ushort colIdx, TDataType data);
-    public TDataType Get(ushort rowIdx, ushort colIdx);
+    public TDataType this[ushort xIds, ushort yIdx] { get; set; }
+    public void Set(ushort xIdx, ushort yIdx, TDataType data);
+    public TDataType Get(ushort xIdx, ushort yIdx);
 
     // TODO change list return types?
-    public TDataType[] GetRow(ushort rowIdx);
-    public TDataType[] GetColumn(ushort columnIdx);
+    public TDataType[] GetYs(ushort yIdx);
+    public TDataType[] GetXs(ushort xIdx);
     public IEnumerable<TDataType> IterateAll();
-    public void MapAll(Func<(ushort row, ushort col), TDataType, TDataType> mappingFunction);
+    public void MapAll(Func<(ushort x, ushort y), TDataType, TDataType> mappingFunction);
 
     #endregion
 
@@ -21,7 +21,7 @@ public interface IMatrix<TDataType>
     public void Fill(TDataType fillData);
 
     public IMatrix<TNewDataType> Convert<TNewDataType>(
-        Func<(ushort row, ushort col), TDataType, TNewDataType> mappingFunction);
+        Func<(ushort x, ushort y), TDataType, TNewDataType> mappingFunction);
 
     public IMatrix<TDataType> Transpose();
 
@@ -29,9 +29,9 @@ public interface IMatrix<TDataType>
 
     # region Validators
 
-    public bool InBounds(ushort rowIdx, ushort colIdx);
-    public bool RowInBounds(ushort rowIdx);
-    public bool ColInBounds(ushort colIdx);
+    public bool InBounds(ushort xIdx, ushort yIdx);
+    public bool YInBounds(ushort yIdx);
+    public bool XInBounds(ushort xIdx);
 
     #endregion
 }
