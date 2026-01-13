@@ -32,6 +32,7 @@ public class KeypointDetection
         _miniBresenhamCircle3T = _miniBresenhamCircle3.Transpose();
         var utils = new Utils();
 
+        // TODO this should probably be done in separate init phase.
         _gaussianKeypairs = Enumerable.Range(0, _options.NumGaussianPairs)
             .Select(_ => utils.NextGaussianPair(_options.GaussianStandardDeviation)).ToList();
     }

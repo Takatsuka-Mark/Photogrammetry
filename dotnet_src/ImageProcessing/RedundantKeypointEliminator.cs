@@ -13,6 +13,7 @@ public class RedundantKeypointEliminator
 
     public List<Keypoint> EliminateRedundantKeypoints(List<Keypoint> keypoints)
     {
+        // TODO could probably be made static with configurations passed in.
         // Uses NMS (Non Maximum Suppression)
 
         keypoints = keypoints.OrderByDescending(keypoint => keypoint.FastScore).ToList();

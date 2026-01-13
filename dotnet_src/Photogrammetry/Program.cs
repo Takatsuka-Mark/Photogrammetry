@@ -6,7 +6,7 @@ using ImageProcessing;
 using ImageProcessing.Options;
 using ImageProcessing.Pipelines;
 using ImageProcessing.Pipelines.Items;
-using ImageProcessing.PipelineV2.Services;
+using ImageProcessing.PipelinesV3.Factories;
 using ImageReader.LocalImageReader;
 using Images.Abstractions;
 using Images.Abstractions.Pixels;
@@ -42,9 +42,18 @@ public class Program
                 .AddHostedService<TestService>()
                 .AddSingleton<DeWarp>()
                 .AddSingleton<DeWarpItem>()
-                .AddSingleton<DeWarpProcessor>()
                 .AddSingleton<DeWarpSequentialPipeline.DeWarpSequentialPipelineBuilder>()
                 .AddSingleton<LocalImageReader>()
+                .AddSingleton<DeWarpTransformStepFactory>()
+                .AddSingleton<SingleImageReaderTransformStepFactory>()
+                .AddSingleton<ImageWriterActionStepFactory>()
+                
+                // TODO should probably make this generic so that I can give any keypoint detector (IKeypointDetector and make the factory take I_)
+                .AddSingleton<KeypointDetection>()
+                .AddSingleton<KeyPointDetectionTransformStepFactory>()
+                
+                .AddSingleton<RedundantKeypointEliminator>()
+                .AddSingleton<RedundantKeypointEliminatorTransformStepFactory>()
             ;
 
             services.AddOptionsWithValidateOnStart<ImageReaderOptions>()

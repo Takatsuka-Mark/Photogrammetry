@@ -8,6 +8,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\ImageProcessing.Abstractions\ImageProcessing.Abstractions.csproj" />
+      <ProjectReference Include="..\ImageReader.LocalImageReader\ImageReader.LocalImageReader.csproj" />
       <ProjectReference Include="..\Images.Abstractions\Images.Abstractions.csproj" />
       <ProjectReference Include="..\Math\LinearAlgebra\LinearAlgebra.csproj" />
     </ItemGroup>
