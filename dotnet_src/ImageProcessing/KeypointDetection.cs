@@ -11,6 +11,7 @@ namespace ImageProcessing;
 public class KeypointDetection
 {
     // TODO determine if there's a better way to store this
+    // TODO don't do FromRowMajor, just set directly using {}
     private readonly Matrix<int> _bresenhamCircle3 = Matrix<int>.FromRowMajorArray(new[,]
     {
         { -3, 0 }, { -3, 1 }, { -2, 2 }, { -1, 3 }, { 0, 3 }, { 1, 3 }, { 2, 2 }, { 3, 1 }, { 3, 0 }, { 3, -1 },

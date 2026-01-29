@@ -69,7 +69,7 @@ public class TestService : IHostedService
         var writer = _imageWriterActionStepFactory.GetAndInitActionBlock();
 
         var linkOptions = new DataflowLinkOptions { PropagateCompletion = true };
-        
+
         imageReader.LinkTo(deWarper, linkOptions);
         deWarper.LinkTo(grayscaleConverter, linkOptions);
         grayscaleConverter.LinkTo(keypointDetector, linkOptions);

@@ -28,7 +28,6 @@ public class Matrix<TDataType> : IMatrix<TDataType>
 
         var matrix = new Matrix<TDataType>(new MatrixDimensions { Width = numCols, Height = numRows });
 
-
         for (ushort row = 0; row < numRows; row += 1)
         {
             for (ushort col = 0; col < numCols; col += 1)
@@ -80,7 +79,7 @@ public class Matrix<TDataType> : IMatrix<TDataType>
     {
         AssertYInBounds(y);
         return Enumerable.Range(0, Dimensions.Width)
-            .Select(x => _data[y, x])
+            .Select(x => _data[x, y])
             .ToArray();
     }
 
@@ -88,7 +87,7 @@ public class Matrix<TDataType> : IMatrix<TDataType>
     {
         AssertXInBounds(x);
         return Enumerable.Range(0, Dimensions.Height)
-            .Select(y => _data[y, x])
+            .Select(y => _data[x, y])
             .ToArray();
     }
 
@@ -98,7 +97,7 @@ public class Matrix<TDataType> : IMatrix<TDataType>
         {
             for (ushort x = 0; x < Dimensions.Width; x += 1)
             {
-                yield return _data[y, x];
+                yield return _data[x, y];
             }
         }
     }
@@ -109,7 +108,7 @@ public class Matrix<TDataType> : IMatrix<TDataType>
         {
             for (ushort x = 0; x < Dimensions.Width; x += 1)
             {
-                _data[y, x] = mappingFunction((y, x), _data[y, x]);
+                _data[x, y] = mappingFunction((x, y), _data[x, y]);
             }
         }
     }
@@ -130,7 +129,7 @@ public class Matrix<TDataType> : IMatrix<TDataType>
         {
             for (ushort x = 0; x < Dimensions.Width; x += 1)
             {
-                newMatrix.Set(x, y, mappingFunction((x, y), _data[y, x]));
+                newMatrix.Set(x, y, mappingFunction((x, y), _data[x, y]));
             }
         }
 
@@ -159,7 +158,9 @@ public class Matrix<TDataType> : IMatrix<TDataType>
     # region Validators
 
     public bool InBounds(int xIdx, int yIdx) => xIdx >= 0 && yIdx >= 0 && xIdx <= ushort.MaxValue &&
-                                                yIdx <= ushort.MaxValue && YInBounds((ushort)yIdx) && XInBounds((ushort)xIdx);
+                                                yIdx <= ushort.MaxValue && YInBounds((ushort)yIdx) &&
+                                                XInBounds((ushort)xIdx);
+
     public bool InBounds(ushort xIdx, ushort yIdx) => YInBounds(yIdx) && XInBounds(xIdx);
 
     public bool YInBounds(ushort yIdx) => yIdx < Dimensions.Height;
