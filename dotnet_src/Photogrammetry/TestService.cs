@@ -64,7 +64,7 @@ public class TestService : IHostedService
         var deWarper = _deWarpTransformStepFactory.GetAndInitTransformBlock();
         var grayscaleConverter = Converters.GetGrayscaleConverterTransformBlock();
         var keypointDetector = _keyPointDetectionTransformStepFactory.GetAndInitTransformBlock();
-        var keypointDrawer = ResultBuilders.DetectedKeypointDrawerTransformBlock(10,
+        var keypointDrawer = ResultBuilders.DetectedKeypointDrawerTransformBlock(1,
             new Rgba64 { A = ushort.MaxValue, R = ushort.MaxValue, B = 0, G = 0 });
         var writer = _imageWriterActionStepFactory.GetAndInitActionBlock();
 

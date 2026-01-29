@@ -7,17 +7,18 @@ public class Grayscale
 
     public static Grayscale FromRgb(Rgb input)
     {
-        return new() { K = (input.R + input.B + input.G) / 3 };
+        return new Grayscale { K = (input.R + input.B + input.G) / 3 };
     }
 
     public static Grayscale FromRgba(Rgba input)
     {
         // TODO this conversion drops the A.
-        return new() { K = (input.R + input.B + input.G) / 3 };
+        return new Grayscale { K = (input.R + input.B + input.G) / 3 };
     }
 
     public static Grayscale FromRgba64(Rgba64 input)
     {
-        return new() { K = ((float)input.R + input.B + input.G) / (3 * ushort.MaxValue) };
+        // TODO does this make sense to be in a abstractions? unsure.
+        return new Grayscale { K = ((float)input.R + input.B + input.G) / (3 * ushort.MaxValue) };
     }
 }
