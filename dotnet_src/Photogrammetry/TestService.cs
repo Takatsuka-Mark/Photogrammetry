@@ -3,6 +3,7 @@ using ImageProcessing.Pipelines;
 using ImageProcessing.Pipelines.Messages;
 using ImageProcessing.PipelinesV3.Factories;
 using ImageReader.LocalImageReader;
+using Images.Abstractions.Pixels;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
@@ -63,14 +64,22 @@ public class TestService : IHostedService
         var deWarper = _deWarpTransformStepFactory.GetAndInitTransformBlock();
         var grayscaleConverter = Converters.GetGrayscaleConverterTransformBlock();
         var keypointDetector = _keyPointDetectionTransformStepFactory.GetAndInitTransformBlock();
+        var keypointDrawer = ResultBuilders.DetectedKeypointDrawerTransformBlock(10,
+            new Rgba64 { A = ushort.MaxValue, R = ushort.MaxValue, B = 0, G = 0 });
         var writer = _imageWriterActionStepFactory.GetAndInitActionBlock();
 
-        imageReader.LinkTo(deWarper);
-        deWarper.LinkTo(grayscaleConverter);
-        grayscaleConverter.LinkTo(keypointDetector);
-        keypointDetector.LinkTo(writer);
+        var linkOptions = new DataflowLinkOptions { PropagateCompletion = true };
+        
+        imageReader.LinkTo(deWarper, linkOptions);
+        deWarper.LinkTo(grayscaleConverter, linkOptions);
+        grayscaleConverter.LinkTo(keypointDetector, linkOptions);
+        keypointDetector.LinkTo(keypointDrawer, linkOptions);
+        keypointDrawer.LinkTo(writer, linkOptions);
 
         imageReader.Post("dewarp/straight_edge_1920x1080.jpg");
+        imageReader.Complete();
+
+        await writer.Completion;
         _logger?.LogInformation("Completed pipeline");
     }
 

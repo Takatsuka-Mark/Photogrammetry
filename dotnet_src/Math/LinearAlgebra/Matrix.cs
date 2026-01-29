@@ -158,6 +158,8 @@ public class Matrix<TDataType> : IMatrix<TDataType>
 
     # region Validators
 
+    public bool InBounds(int xIdx, int yIdx) => xIdx >= 0 && yIdx >= 0 && xIdx <= ushort.MaxValue &&
+                                                yIdx <= ushort.MaxValue && YInBounds((ushort)yIdx) && XInBounds((ushort)xIdx);
     public bool InBounds(ushort xIdx, ushort yIdx) => YInBounds(yIdx) && XInBounds(xIdx);
 
     public bool YInBounds(ushort yIdx) => yIdx < Dimensions.Height;
