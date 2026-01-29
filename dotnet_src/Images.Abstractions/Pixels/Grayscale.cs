@@ -15,4 +15,9 @@ public class Grayscale
         // TODO this conversion drops the A.
         return new() { K = (input.R + input.B + input.G) / 3 };
     }
+
+    public static Grayscale FromRgba64(Rgba64 input)
+    {
+        return new() { K = ((float)input.R + input.B + input.G) / (3 * ushort.MaxValue) };
+    }
 }

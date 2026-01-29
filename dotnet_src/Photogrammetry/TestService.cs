@@ -1,15 +1,10 @@
 using System.Threading.Tasks.Dataflow;
-using ImageProcessing;
-using ImageProcessing.Options;
 using ImageProcessing.Pipelines;
-using ImageProcessing.Pipelines.Items;
 using ImageProcessing.Pipelines.Messages;
 using ImageProcessing.PipelinesV3.Factories;
 using ImageReader.LocalImageReader;
-using MathNet.Numerics.Integration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 
 namespace Photogrammetry;
 
@@ -66,10 +61,14 @@ public class TestService : IHostedService
         //      in a repeatable manner. i'm also unsure how to handle the settings for these. On restart seems, bad.
         var imageReader = _imageReaderTransformStepFactory.GetAndInitTransformBlock();
         var deWarper = _deWarpTransformStepFactory.GetAndInitTransformBlock();
+        var grayscaleConverter = Converters.GetGrayscaleConverterTransformBlock();
+        var keypointDetector = _keyPointDetectionTransformStepFactory.GetAndInitTransformBlock();
         var writer = _imageWriterActionStepFactory.GetAndInitActionBlock();
 
         imageReader.LinkTo(deWarper);
-        deWarper.LinkTo(writer);
+        deWarper.LinkTo(grayscaleConverter);
+        grayscaleConverter.LinkTo(keypointDetector);
+        keypointDetector.LinkTo(writer);
 
         imageReader.Post("dewarp/straight_edge_1920x1080.jpg");
         _logger?.LogInformation("Completed pipeline");

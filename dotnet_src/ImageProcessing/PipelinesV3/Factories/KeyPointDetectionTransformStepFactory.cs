@@ -15,7 +15,6 @@ public class KeyPointDetectionTransformStepFactory : ITransformStepFactory<Grays
     
     public void Initialize()
     {
-        throw new NotImplementedException();
     }
 
     public TransformBlock<GrayscaleImagePair, DetectedKeypoints> GetTransformBlock()
