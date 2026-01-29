@@ -1,5 +1,6 @@
 using ImageProcessing.Abstractions;
-using Images.Abstractions;
+using LinearAlgebra;
+using MatrixDimensions = Images.Abstractions.MatrixDimensions;
 
 namespace ImageProcessing;
 

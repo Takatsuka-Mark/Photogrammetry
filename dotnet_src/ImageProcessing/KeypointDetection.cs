@@ -1,7 +1,7 @@
 using ImageProcessing.Abstractions;
 using ImageProcessing.Options;
-using Images.Abstractions;
 using Images.Abstractions.Pixels;
+using LinearAlgebra;
 using Microsoft.Extensions.Options;
 
 namespace ImageProcessing;
@@ -11,16 +11,16 @@ namespace ImageProcessing;
 public class KeypointDetection
 {
     // TODO determine if there's a better way to store this
-    private readonly MatrixV1<int> _bresenhamCircle3 = MatrixV1<int>.FromRowMajorArray(new[,]
+    private readonly Matrix<int> _bresenhamCircle3 = Matrix<int>.FromRowMajorArray(new[,]
     {
         { -3, 0 }, { -3, 1 }, { -2, 2 }, { -1, 3 }, { 0, 3 }, { 1, 3 }, { 2, 2 }, { 3, 1 }, { 3, 0 }, { 3, -1 },
         { 2, -2 }, { 1, -3 }, { 0, -3 }, { -1, -3 }, { -2, -2 }, { -3, 1 }
     });
 
-    private readonly MatrixV1<int> _miniBresenhamCircle3 =
-        MatrixV1<int>.FromRowMajorArray(new[,] { { -3, 0 }, { 0, 3 }, { 3, 0 }, { 0, -3 } });
-    private readonly MatrixV1<int> _bresenhamCircle3T;
-    private readonly MatrixV1<int> _miniBresenhamCircle3T;
+    private readonly Matrix<int> _miniBresenhamCircle3 =
+        Matrix<int>.FromRowMajorArray(new[,] { { -3, 0 }, { 0, 3 }, { 3, 0 }, { 0, -3 } });
+    private readonly IMatrix<int> _bresenhamCircle3T;
+    private readonly IMatrix<int> _miniBresenhamCircle3T;
     private readonly List<(Coordinate, Coordinate)> _gaussianKeypairs;
     private readonly KeypointDetectionOptions _options;
 
@@ -37,12 +37,12 @@ public class KeypointDetection
             .Select(_ => utils.NextGaussianPair(_options.GaussianStandardDeviation)).ToList();
     }
 
-    public List<Keypoint> Detect(MatrixV1<Grayscale> image)
+    public List<Keypoint> Detect(Matrix<Grayscale> image)
     {
         var keypoints = new List<Keypoint>();
-        for (var y = 3; y < image.Dimensions.Height - 3; y++)
+        for (ushort y = 3; y < image.Dimensions.Height - 3; y++)
         {
-            for (var x = 3; x < image.Dimensions.Width - 3; x++)
+            for (ushort x = 3; x < image.Dimensions.Width - 3; x++)
             {
                 var intensity = GetIntensityValueIfKeypoint(image, x, y);
                 if (intensity.HasValue)
@@ -59,7 +59,7 @@ public class KeypointDetection
         return keypoints;
     }
 
-    internal int? GetIntensityValueIfKeypoint(MatrixV1<Grayscale> image, int x, int y)
+    internal int? GetIntensityValueIfKeypoint(Matrix<Grayscale> image, ushort x, ushort y)
     {
         var intensity = image[x, y].K;
 
@@ -74,7 +74,7 @@ public class KeypointDetection
 
         // TODO don't hardcode this value
         // TODO I don't like this loop, but I guess it works. Can we speed it up?
-        for (var idx = 0; idx < 16; idx++)
+        for (ushort idx = 0; idx < 16; idx++)
         {
             // Fetch intensity at bresenham index 1
             if (InThreshold(intensity,
@@ -111,7 +111,7 @@ public class KeypointDetection
     }
 
     [Obsolete("Use GetIntensityValueIfKeypoint instead. This does not properly handle the case where it is still the beginning of a consecutive loop")]
-    internal bool IsKeypoint(MatrixV1<Grayscale> image, int x, int y)
+    internal bool IsKeypoint(Matrix<Grayscale> image, ushort x, ushort y)
     {
         var intensity = image[x, y].K;
 
@@ -124,7 +124,7 @@ public class KeypointDetection
         var numFail = 0;
 
         // TODO don't hardcode this value
-        for (var idx = 0; idx < 16; idx++)
+        for (ushort idx = 0; idx < 16; idx++)
         {
             // Fetch intensity at bresenham index 1
             if (InThreshold(intensity,
@@ -158,11 +158,11 @@ public class KeypointDetection
         return numConsec >= 12;
     }
 
-    internal bool IsPotentialKeypoint(MatrixV1<Grayscale> image, float intensity, int x, int y)
+    internal bool IsPotentialKeypoint(Matrix<Grayscale> image, float intensity, ushort x, ushort y)
     {
         var numInsideThreshold = 0;
 
-        for (var idx = 0; idx < 4; idx++)
+        for (ushort idx = 0; idx < 4; idx++)
         {
             if (!InThreshold(intensity,
                     image[_miniBresenhamCircle3T[idx, 0] + x, _miniBresenhamCircle3T[idx, 1] + y].K))

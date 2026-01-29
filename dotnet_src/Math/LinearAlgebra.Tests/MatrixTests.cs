@@ -43,10 +43,10 @@ public class MatrixTests
     {
         var matrix = new Matrix<float>(new MatrixDimensions { Height = 2, Width = 2 }, emptyFill: 0f)
         {
-            [0, 0] = 1f,
-            [0, 1] = 2f,
-            [1, 0] = 3f,
-            [1, 1] = 4f
+            [(ushort)0, (ushort)0] = 1f,
+            [(ushort)0, (ushort)1] = 2f,
+            [(ushort)1, (ushort)0] = 3f,
+            [(ushort)1, (ushort)1] = 4f
         };
 
         var resultMatrix = matrix.Transpose();

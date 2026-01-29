@@ -21,19 +21,53 @@ public class Matrix<TDataType> : IMatrix<TDataType>
         _data = new TDataType[dimensions.Width, dimensions.Height];
     }
 
+    public static Matrix<TDataType> FromRowMajorArray(TDataType[,] rowMajorArray)
+    {
+        var numRows = (ushort)rowMajorArray.GetLength(0);
+        var numCols = (ushort)rowMajorArray.GetLength(1);
+
+        var matrix = new Matrix<TDataType>(new MatrixDimensions { Width = numCols, Height = numRows });
+
+
+        for (ushort row = 0; row < numRows; row += 1)
+        {
+            for (ushort col = 0; col < numCols; col += 1)
+            {
+                matrix[col, row] = rowMajorArray[row, col];
+            }
+        }
+
+        return matrix;
+    }
+
     # region Accessors
 
     public TDataType this[ushort x, ushort y]
     {
         // TODO rename row col?
         get => Get(x, y);
-        set => Set(x ,y, value);
+        set => Set(x, y, value);
     }
+
+    public TDataType this[int x, int y] => Get(x, y);
+
+    public TDataType this[Coordinate coordinate] => Get((ushort)coordinate.X, (ushort)coordinate.Y);
 
     public void Set(ushort x, ushort y, TDataType data)
     {
         AssertInBounds(x, y);
         _data[x, y] = data;
+    }
+
+    public TDataType Get(int x, int y)
+    {
+        if (x < 0 || y < 0 || x > ushort.MaxValue || y > ushort.MaxValue)
+        {
+            throw new IndexOutOfRangeException($"Attempting to fetch value that would be improperly cast: {x}, {y}");
+        }
+
+        AssertInBounds((ushort)x, (ushort)y);
+        return _data[x, y];
     }
 
     public TDataType Get(ushort x, ushort y)
@@ -106,8 +140,9 @@ public class Matrix<TDataType> : IMatrix<TDataType>
     public IMatrix<TDataType> Transpose()
     {
         // TODO need a better way to load data into new matrix.
-        var newMatrix = new Matrix<TDataType>(new MatrixDimensions { Height = Dimensions.Width, Width = Dimensions.Height });
-        
+        var newMatrix = new Matrix<TDataType>(new MatrixDimensions
+            { Height = Dimensions.Width, Width = Dimensions.Height });
+
         for (ushort y = 0; y < Dimensions.Height; y += 1)
         {
             for (ushort x = 0; x < Dimensions.Width; x += 1)
