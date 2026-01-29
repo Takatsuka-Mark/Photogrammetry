@@ -13,7 +13,7 @@ public class Keypoint
     public readonly BigInteger BriefDescriptor;
     public Grayscale Value { get; init; }
 
-    public Keypoint(int imageId, Coordinate coordinate, List<(Coordinate, Coordinate)> guassianKeyPairs, Matrix<Grayscale> image, int fastScore)
+    public Keypoint(int imageId, Coordinate coordinate, List<(Coordinate, Coordinate)> guassianKeyPairs, MatrixV1<Grayscale> image, int fastScore)
     {
         _imageId = imageId;
         Coordinate = coordinate;
@@ -25,7 +25,7 @@ public class Keypoint
         Value = image[Coordinate.X, Coordinate.Y];
     }
 
-    public static BigInteger GetBriefDescriptor(Coordinate coordinate, List<(Coordinate, Coordinate)> gaussianKeyPairs, Matrix<Grayscale> image)
+    public static BigInteger GetBriefDescriptor(Coordinate coordinate, List<(Coordinate, Coordinate)> gaussianKeyPairs, MatrixV1<Grayscale> image)
     {
         var descriptor = BigInteger.Zero;
         var dimensions = image.Dimensions;
@@ -55,7 +55,7 @@ public class Keypoint
         return descriptor;
     }
 
-    public static Grayscale GetValueAtCoordinate(Coordinate testCoordinate, Matrix<Grayscale> image)
+    public static Grayscale GetValueAtCoordinate(Coordinate testCoordinate, MatrixV1<Grayscale> image)
     {
         // TODO move this into image? Also why is the image stored on the keypoint itself... Seems like the keypoint should just be a coord with extra properties.
         return image[testCoordinate.X, testCoordinate.Y];

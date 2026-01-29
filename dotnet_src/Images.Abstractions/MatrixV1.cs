@@ -4,20 +4,20 @@ using System.Security.Cryptography.X509Certificates;
 
 namespace Images.Abstractions;
 
-public class Matrix<TData>
+public class MatrixV1<TData>
 {
     // TODO maybe eventually allow for creation of N dimensional matrix?
     public MatrixDimensions Dimensions { get; }
 
     private readonly MatrixStorage<TData> _storage;
 
-    public Matrix(MatrixDimensions dimensions)
+    public MatrixV1(MatrixDimensions dimensions)
     {
         Dimensions = dimensions;
         _storage = new MatrixStorage<TData>(dimensions);
     }
 
-    internal Matrix(MatrixStorage<TData> storage)
+    internal MatrixV1(MatrixStorage<TData> storage)
     {
         Dimensions = storage.Dimensions;
         _storage = storage;
@@ -25,14 +25,14 @@ public class Matrix<TData>
 
     // TODO maybe some of this should go into a Matricies Project
     
-    public static Matrix<TData> FromColMajorArray(TData[,] colMajorArray)
+    public static MatrixV1<TData> FromColMajorArray(TData[,] colMajorArray)
     {
-        return new Matrix<TData>(MatrixStorage<TData>.FromColMajorArray(colMajorArray));
+        return new MatrixV1<TData>(MatrixStorage<TData>.FromColMajorArray(colMajorArray));
     }
     
-    public static Matrix<TData> FromRowMajorArray(TData[,] rowMajorArray)
+    public static MatrixV1<TData> FromRowMajorArray(TData[,] rowMajorArray)
     {
-        return new Matrix<TData>(MatrixStorage<TData>.FromRowMajorArray(rowMajorArray));
+        return new MatrixV1<TData>(MatrixStorage<TData>.FromRowMajorArray(rowMajorArray));
     }
 
     public TData this[int x, int y]
@@ -52,10 +52,10 @@ public class Matrix<TData>
             throw new ArgumentOutOfRangeException($"Received X:{x}, Y:{y} for matrix of Width:{Dimensions.Width}, Height:{Dimensions.Height}");
     }
 
-    public Matrix<TData> Transpose()
+    public MatrixV1<TData> Transpose()
     {
         // TODO should probably build a way to do this without checks.
-        var transposedMatrix = new Matrix<TData>(new MatrixDimensions{Height = Dimensions.Width, Width = Dimensions.Height});
+        var transposedMatrix = new MatrixV1<TData>(new MatrixDimensions{Height = Dimensions.Width, Width = Dimensions.Height});
 
         for (var y = 0; y < Dimensions.Height; y++)
         {
@@ -96,10 +96,10 @@ public class Matrix<TData>
 
 
     public delegate TOutData PixelConverter<out TOutData>(TData dataIn);
-    public Matrix<TNewData> Convert<TNewData>(PixelConverter<TNewData> pixelConverter)
+    public MatrixV1<TNewData> Convert<TNewData>(PixelConverter<TNewData> pixelConverter)
     {
         // TODO should create a generic map function that does this double for loop generation.
-        var outputMatrix = new Matrix<TNewData>(Dimensions);
+        var outputMatrix = new MatrixV1<TNewData>(Dimensions);
 
         for (var x = 0; x < Dimensions.Width; x++)
         {

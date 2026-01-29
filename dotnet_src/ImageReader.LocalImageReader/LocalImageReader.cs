@@ -44,11 +44,11 @@ public class LocalImageReader
         return matrix;
     }
 
-    public Images.Abstractions.Matrix<Rgba> ReadImageFromDirectory(string filename)
+    public Images.Abstractions.MatrixV1<Rgba> ReadImageFromDirectory(string filename)
     {
         var rawImage = Image.Load<SixLabors.ImageSharp.PixelFormats.Rgba64>(new DecoderOptions { SkipMetadata = false },
             $"{_options.RootDirectory}/{filename}");
-        var myImage = new Images.Abstractions.Matrix<Rgba>(new MatrixDimensions
+        var myImage = new Images.Abstractions.MatrixV1<Rgba>(new MatrixDimensions
             { Width = rawImage.Width, Height = rawImage.Height });
 
         for (var x = 0; x < rawImage.Width; x++)
@@ -99,7 +99,7 @@ public class LocalImageReader
         }
     }
     
-    public void WriteImageToDirectory(Images.Abstractions.Matrix<Rgba> rawImage, string filename)
+    public void WriteImageToDirectory(Images.Abstractions.MatrixV1<Rgba> rawImage, string filename)
     {
         // TODO should probably move to a different class...
         using (var image =

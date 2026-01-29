@@ -7,5 +7,5 @@ public class RgbaImage : BaseMessage
 {
     public override string GetName() => "RGB Image message";
     
-    public required Matrix<Rgba> Image { get; init; }
+    public required MatrixV1<Rgba> Image { get; init; }
 }

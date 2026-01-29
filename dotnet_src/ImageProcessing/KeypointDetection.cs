@@ -11,16 +11,16 @@ namespace ImageProcessing;
 public class KeypointDetection
 {
     // TODO determine if there's a better way to store this
-    private readonly Matrix<int> _bresenhamCircle3 = Matrix<int>.FromRowMajorArray(new[,]
+    private readonly MatrixV1<int> _bresenhamCircle3 = MatrixV1<int>.FromRowMajorArray(new[,]
     {
         { -3, 0 }, { -3, 1 }, { -2, 2 }, { -1, 3 }, { 0, 3 }, { 1, 3 }, { 2, 2 }, { 3, 1 }, { 3, 0 }, { 3, -1 },
         { 2, -2 }, { 1, -3 }, { 0, -3 }, { -1, -3 }, { -2, -2 }, { -3, 1 }
     });
 
-    private readonly Matrix<int> _miniBresenhamCircle3 =
-        Matrix<int>.FromRowMajorArray(new[,] { { -3, 0 }, { 0, 3 }, { 3, 0 }, { 0, -3 } });
-    private readonly Matrix<int> _bresenhamCircle3T;
-    private readonly Matrix<int> _miniBresenhamCircle3T;
+    private readonly MatrixV1<int> _miniBresenhamCircle3 =
+        MatrixV1<int>.FromRowMajorArray(new[,] { { -3, 0 }, { 0, 3 }, { 3, 0 }, { 0, -3 } });
+    private readonly MatrixV1<int> _bresenhamCircle3T;
+    private readonly MatrixV1<int> _miniBresenhamCircle3T;
     private readonly List<(Coordinate, Coordinate)> _gaussianKeypairs;
     private readonly KeypointDetectionOptions _options;
 
@@ -37,7 +37,7 @@ public class KeypointDetection
             .Select(_ => utils.NextGaussianPair(_options.GaussianStandardDeviation)).ToList();
     }
 
-    public List<Keypoint> Detect(Matrix<Grayscale> image)
+    public List<Keypoint> Detect(MatrixV1<Grayscale> image)
     {
         var keypoints = new List<Keypoint>();
         for (var y = 3; y < image.Dimensions.Height - 3; y++)
@@ -59,7 +59,7 @@ public class KeypointDetection
         return keypoints;
     }
 
-    internal int? GetIntensityValueIfKeypoint(Matrix<Grayscale> image, int x, int y)
+    internal int? GetIntensityValueIfKeypoint(MatrixV1<Grayscale> image, int x, int y)
     {
         var intensity = image[x, y].K;
 
@@ -111,7 +111,7 @@ public class KeypointDetection
     }
 
     [Obsolete("Use GetIntensityValueIfKeypoint instead. This does not properly handle the case where it is still the beginning of a consecutive loop")]
-    internal bool IsKeypoint(Matrix<Grayscale> image, int x, int y)
+    internal bool IsKeypoint(MatrixV1<Grayscale> image, int x, int y)
     {
         var intensity = image[x, y].K;
 
@@ -158,7 +158,7 @@ public class KeypointDetection
         return numConsec >= 12;
     }
 
-    internal bool IsPotentialKeypoint(Matrix<Grayscale> image, float intensity, int x, int y)
+    internal bool IsPotentialKeypoint(MatrixV1<Grayscale> image, float intensity, int x, int y)
     {
         var numInsideThreshold = 0;
 

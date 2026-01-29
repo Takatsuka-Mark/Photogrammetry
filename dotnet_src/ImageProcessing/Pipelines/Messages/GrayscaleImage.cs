@@ -7,5 +7,5 @@ public class GrayscaleImage : BaseMessage
 {
 	public override string GetName() => "Grayscale Image message";
 	
-	public required Matrix<Grayscale> Image { get; init; } 
+	public required MatrixV1<Grayscale> Image { get; init; } 
 }
