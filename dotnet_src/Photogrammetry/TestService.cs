@@ -64,13 +64,14 @@ public class TestService : IHostedService
         var deWarper = _deWarpTransformStepFactory.GetAndInitTransformBlock();
         var grayscaleConverter = Converters.GetGrayscaleConverterTransformBlock();
         var keypointDetector = _keyPointDetectionTransformStepFactory.GetAndInitTransformBlock();
-        var keypointDrawer = ResultBuilders.DetectedKeypointDrawerTransformBlock(1,
+        var keypointDrawer = ResultBuilders.DetectedKeypointDrawerTransformBlock(5,
             new Rgba64 { A = ushort.MaxValue, R = ushort.MaxValue, B = 0, G = 0 });
         var writer = _imageWriterActionStepFactory.GetAndInitActionBlock();
 
         var linkOptions = new DataflowLinkOptions { PropagateCompletion = true };
 
         imageReader.LinkTo(deWarper, linkOptions);
+        // deWarper.LinkTo(writer, linkOptions);
         deWarper.LinkTo(grayscaleConverter, linkOptions);
         grayscaleConverter.LinkTo(keypointDetector, linkOptions);
         keypointDetector.LinkTo(keypointDrawer, linkOptions);

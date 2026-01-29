@@ -26,7 +26,9 @@ public class KeyPointDetectionTransformStepFactory : ITransformStepFactory<Grays
         {
             // TODO log category. also downgrade to debug
             _logger?.LogInformation("Detecting keypoints");
-            return new DetectedKeypoints(imagePair, _keypointDetection.Detect(imagePair.GrayscaleImage));
+            var keypoints = new DetectedKeypoints(imagePair, _keypointDetection.Detect(imagePair.GrayscaleImage));
+            _logger?.LogInformation("Found {N} keypoints", keypoints.Keypoints.Count);
+            return keypoints;
         });
     }
 

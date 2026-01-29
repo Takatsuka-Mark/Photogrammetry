@@ -60,6 +60,8 @@ public class Program
                 .Bind(context.Configuration.GetSection(ImageReaderOptions.Section)).ValidateDataAnnotations();
             services.AddOptionsWithValidateOnStart<DeWarpOptions>()
                 .Bind(context.Configuration.GetSection(DeWarpOptions.Section)).ValidateDataAnnotations();
+            services.AddOptionsWithValidateOnStart<KeypointDetectionOptions>()
+                .Bind(context.Configuration.GetSection(KeypointDetectionOptions.Section)).ValidateDataAnnotations();
         })
         .Build();
 
