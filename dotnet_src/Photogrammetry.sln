@@ -27,6 +27,12 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LinearAlgebra.Tests", "Math
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Images.Abstractions.Tests", "Images.Abstractions.Tests\Images.Abstractions.Tests.csproj", "{142A596C-453D-4DC6-A42C-B6613DDDFBF3}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Storage", "Storage", "{D876DF4C-2CF9-4A27-BF2F-96EB27404C08}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MatrixStore.Abstractions", "Storage\MatrixStore.Abstractions\MatrixStore.Abstractions.csproj", "{32A11257-C747-43E0-B2B4-FE1840B649C6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MatrixStore.Memory", "Storage\MatrixStore.Memory\MatrixStore.Memory.csproj", "{1FBE0CA8-50FE-4153-8283-6A572B846251}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -80,9 +86,19 @@ Global
 		{142A596C-453D-4DC6-A42C-B6613DDDFBF3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{142A596C-453D-4DC6-A42C-B6613DDDFBF3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{142A596C-453D-4DC6-A42C-B6613DDDFBF3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{32A11257-C747-43E0-B2B4-FE1840B649C6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{32A11257-C747-43E0-B2B4-FE1840B649C6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{32A11257-C747-43E0-B2B4-FE1840B649C6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{32A11257-C747-43E0-B2B4-FE1840B649C6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1FBE0CA8-50FE-4153-8283-6A572B846251}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1FBE0CA8-50FE-4153-8283-6A572B846251}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1FBE0CA8-50FE-4153-8283-6A572B846251}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1FBE0CA8-50FE-4153-8283-6A572B846251}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{CE0982C6-F803-4386-B279-C34E0D1A001E} = {57A48865-863C-48AB-826A-9CF1AFE02F04}
 		{0C55C574-EB7F-40AF-88DD-196851D7DA3B} = {57A48865-863C-48AB-826A-9CF1AFE02F04}
+		{32A11257-C747-43E0-B2B4-FE1840B649C6} = {D876DF4C-2CF9-4A27-BF2F-96EB27404C08}
+		{1FBE0CA8-50FE-4153-8283-6A572B846251} = {D876DF4C-2CF9-4A27-BF2F-96EB27404C08}
 	EndGlobalSection
 EndGlobal
