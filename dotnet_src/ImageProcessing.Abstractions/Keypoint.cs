@@ -1,6 +1,7 @@
 using System.Numerics;
 using Images.Abstractions;
 using Images.Abstractions.Pixels;
+using LinearAlgebra;
 using Microsoft.VisualBasic.CompilerServices;
 
 namespace ImageProcessing.Abstractions;
@@ -22,7 +23,7 @@ public class Keypoint
         // TODO determine a less clunky way to create the brief descriptor. Like don't pass all this into the constructor
         // TODO the brief descriptor should just be requested when needed. Or be a superclass of this like "keypoint with brief". Or myabe some form of metadata.
         BriefDescriptor = GetBriefDescriptor(Coordinate, guassianKeyPairs, image);
-        Value = image[Coordinate.X, Coordinate.Y];
+        Value = image[(ushort)Coordinate.X, (ushort)Coordinate.Y];
     }
 
     public static BigInteger GetBriefDescriptor(Coordinate coordinate, List<(Coordinate, Coordinate)> gaussianKeyPairs, Matrix<Grayscale> image)
@@ -43,8 +44,8 @@ public class Keypoint
             if (!testCoordinate2.IsInPositiveBounds(dimensions))
                 continue;
 
-            var testValue1 = GetValueAtCoordinate(testCoordinate1, image).K;
-            var testValue2 = GetValueAtCoordinate(testCoordinate2, image).K;
+            var testValue1 = image[testCoordinate1].K;
+            var testValue2 = image[testCoordinate2].K;
 
             if (testValue1 < testValue2)
             {
@@ -53,12 +54,6 @@ public class Keypoint
         }
 
         return descriptor;
-    }
-
-    public static Grayscale GetValueAtCoordinate(Coordinate testCoordinate, Matrix<Grayscale> image)
-    {
-        // TODO move this into image? Also why is the image stored on the keypoint itself... Seems like the keypoint should just be a coord with extra properties.
-        return image[testCoordinate.X, testCoordinate.Y];
     }
 
     public Grayscale GetValue()

@@ -1,18 +1,19 @@
-using ImageProcessing;
 using ImageProcessing.Abstractions;
-using MathNet.Numerics;
+
+namespace ImageProcessing;
 
 public class RedundantKeypointEliminator
 {
-    private readonly int supressionRadius;
+    private readonly int _suppressionRadius;
 
-    public RedundantKeypointEliminator(int supressionRadius)
+    public RedundantKeypointEliminator(int suppressionRadius)
     {
-        this.supressionRadius = supressionRadius;
+        _suppressionRadius = suppressionRadius;
     }
 
     public List<Keypoint> EliminateRedundantKeypoints(List<Keypoint> keypoints)
     {
+        // TODO could probably be made static with configurations passed in.
         // Uses NMS (Non Maximum Suppression)
 
         keypoints = keypoints.OrderByDescending(keypoint => keypoint.FastScore).ToList();
@@ -32,7 +33,7 @@ public class RedundantKeypointEliminator
     }
 
     public bool IsAcceptableDistance(Keypoint kp1, Keypoint kp2){
-        return Utils.CoordinateDistance(kp1.Coordinate, kp2.Coordinate) > supressionRadius;
+        return Utils.CoordinateDistance(kp1.Coordinate, kp2.Coordinate) > _suppressionRadius;
     }
 
     // TODO implement ANMS (Adaptive NMS)

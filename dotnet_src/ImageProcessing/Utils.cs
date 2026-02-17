@@ -1,5 +1,4 @@
-using ImageProcessing.Abstractions;
-using Images.Abstractions;
+using LinearAlgebra;
 
 namespace ImageProcessing;
 

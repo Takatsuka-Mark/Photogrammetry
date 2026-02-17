@@ -1,5 +1,4 @@
-using System.ComponentModel.DataAnnotations;
-using Images.Abstractions;
+using LinearAlgebra;
 
 namespace ImageProcessing.Options;
 

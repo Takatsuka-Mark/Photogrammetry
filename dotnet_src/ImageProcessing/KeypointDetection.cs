@@ -1,16 +1,17 @@
 using ImageProcessing.Abstractions;
 using ImageProcessing.Options;
-using Images.Abstractions;
 using Images.Abstractions.Pixels;
+using LinearAlgebra;
 using Microsoft.Extensions.Options;
 
 namespace ImageProcessing;
-
 
 // Using FAST
 public class KeypointDetection
 {
     // TODO determine if there's a better way to store this
+    // TODO don't do FromRowMajor, just set directly using {}
+    // TODO this is a somewhat arbitrary dimension. It could be greatly improved.
     private readonly Matrix<int> _bresenhamCircle3 = Matrix<int>.FromRowMajorArray(new[,]
     {
         { -3, 0 }, { -3, 1 }, { -2, 2 }, { -1, 3 }, { 0, 3 }, { 1, 3 }, { 2, 2 }, { 3, 1 }, { 3, 0 }, { 3, -1 },
@@ -19,8 +20,9 @@ public class KeypointDetection
 
     private readonly Matrix<int> _miniBresenhamCircle3 =
         Matrix<int>.FromRowMajorArray(new[,] { { -3, 0 }, { 0, 3 }, { 3, 0 }, { 0, -3 } });
-    private readonly Matrix<int> _bresenhamCircle3T;
-    private readonly Matrix<int> _miniBresenhamCircle3T;
+
+    private readonly IMatrix<int> _bresenhamCircle3T;
+    private readonly IMatrix<int> _miniBresenhamCircle3T;
     private readonly List<(Coordinate, Coordinate)> _gaussianKeypairs;
     private readonly KeypointDetectionOptions _options;
 
@@ -32,6 +34,7 @@ public class KeypointDetection
         _miniBresenhamCircle3T = _miniBresenhamCircle3.Transpose();
         var utils = new Utils();
 
+        // TODO this should probably be done in separate init phase.
         _gaussianKeypairs = Enumerable.Range(0, _options.NumGaussianPairs)
             .Select(_ => utils.NextGaussianPair(_options.GaussianStandardDeviation)).ToList();
     }
@@ -39,14 +42,15 @@ public class KeypointDetection
     public List<Keypoint> Detect(Matrix<Grayscale> image)
     {
         var keypoints = new List<Keypoint>();
-        for (var y = 3; y < image.Dimensions.Height - 3; y++)
+        for (ushort y = 3; y < image.Dimensions.Height - 3; y++)
         {
-            for (var x = 3; x < image.Dimensions.Width - 3; x++)
+            for (ushort x = 3; x < image.Dimensions.Width - 3; x++)
             {
                 var intensity = GetIntensityValueIfKeypoint(image, x, y);
                 if (intensity.HasValue)
                 {
-                    keypoints.Add(new Keypoint(0, new Coordinate { X = x, Y = y }, _gaussianKeypairs, image, intensity.Value));
+                    keypoints.Add(new Keypoint(0, new Coordinate { X = x, Y = y }, _gaussianKeypairs, image,
+                        intensity.Value));
                 }
 
                 // if (IsKeypoint(image, x, y))
@@ -58,7 +62,7 @@ public class KeypointDetection
         return keypoints;
     }
 
-    internal int? GetIntensityValueIfKeypoint(Matrix<Grayscale> image, int x, int y)
+    public int? GetIntensityValueIfKeypoint(Matrix<Grayscale> image, ushort x, ushort y)
     {
         var intensity = image[x, y].K;
 
@@ -73,7 +77,7 @@ public class KeypointDetection
 
         // TODO don't hardcode this value
         // TODO I don't like this loop, but I guess it works. Can we speed it up?
-        for (var idx = 0; idx < 16; idx++)
+        for (ushort idx = 0; idx < 16; idx++)
         {
             // Fetch intensity at bresenham index 1
             if (InThreshold(intensity,
@@ -109,59 +113,11 @@ public class KeypointDetection
         return longestConsec < 12 ? null : longestConsec;
     }
 
-    [Obsolete("Use GetIntensityValueIfKeypoint instead. This does not properly handle the case where it is still the beginning of a consecutive loop")]
-    internal bool IsKeypoint(Matrix<Grayscale> image, int x, int y)
-    {
-        var intensity = image[x, y].K;
-
-        if (!IsPotentialKeypoint(image, intensity, x, y))
-            return false;
-
-        var isBeginningConsec = true;
-        var numBeginningConsec = 0;
-        var numConsec = 0;
-        var numFail = 0;
-
-        // TODO don't hardcode this value
-        for (var idx = 0; idx < 16; idx++)
-        {
-            // Fetch intensity at bresenham index 1
-            if (InThreshold(intensity,
-                    image[_bresenhamCircle3T[idx, 0] + x, _bresenhamCircle3T[idx, 1] + y].K))
-            {
-                isBeginningConsec = false;
-                numConsec = 0;
-
-                if (numFail > 3)
-                    return false;
-
-                numFail += 1;
-            }
-            else
-            {
-                numConsec += 1;
-                if (isBeginningConsec)
-                {
-                    numBeginningConsec += 1;
-                }
-
-                if (numConsec >= 12)
-                    return true;
-            }
-        }
-
-        if (isBeginningConsec)
-            System.Console.WriteLine("HELP");
-
-        numConsec += numBeginningConsec;
-        return numConsec >= 12;
-    }
-
-    internal bool IsPotentialKeypoint(Matrix<Grayscale> image, float intensity, int x, int y)
+    public bool IsPotentialKeypoint(Matrix<Grayscale> image, float intensity, ushort x, ushort y)
     {
         var numInsideThreshold = 0;
 
-        for (var idx = 0; idx < 4; idx++)
+        for (ushort idx = 0; idx < 4; idx++)
         {
             if (!InThreshold(intensity,
                     image[_miniBresenhamCircle3T[idx, 0] + x, _miniBresenhamCircle3T[idx, 1] + y].K))

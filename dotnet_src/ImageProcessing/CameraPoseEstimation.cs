@@ -1,6 +1,5 @@
-using System.Net;
 using ImageProcessing.Abstractions;
-using Images.Abstractions;
+using LinearAlgebra;
 using MathNet.Numerics.LinearAlgebra.Single;
 
 namespace ImageProcessing;

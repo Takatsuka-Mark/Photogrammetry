@@ -6,9 +6,4 @@
         <Nullable>enable</Nullable>
     </PropertyGroup>
 
-    <ItemGroup>
-      <ProjectReference Include="..\Images.Abstractions\Images.Abstractions.csproj" />
-      <ProjectReference Include="..\Math\LinearAlgebra\LinearAlgebra.csproj" />
-    </ItemGroup>
-
 </Project>

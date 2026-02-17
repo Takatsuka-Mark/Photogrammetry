@@ -4,8 +4,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using ImageProcessing;
 using ImageProcessing.Options;
-using ImageProcessing.Pipelines;
-using ImageProcessing.Pipelines.Items;
+using ImageProcessing.PipelinesV3.Factories;
 using ImageReader.LocalImageReader;
 using Images.Abstractions;
 using Images.Abstractions.Pixels;
@@ -40,15 +39,25 @@ public class Program
             services
                 .AddHostedService<TestService>()
                 .AddSingleton<DeWarp>()
-                .AddSingleton<DeWarpItem>()
-                .AddSingleton<DeWarpSequentialPipeline.DeWarpSequentialPipelineBuilder>()
                 .AddSingleton<LocalImageReader>()
+                .AddSingleton<DeWarpTransformStepFactory>()
+                .AddSingleton<SingleImageReaderTransformStepFactory>()
+                .AddSingleton<ImageWriterActionStepFactory>()
+                
+                // TODO should probably make this generic so that I can give any keypoint detector (IKeypointDetector and make the factory take I_)
+                .AddSingleton<KeypointDetection>()
+                .AddSingleton<KeyPointDetectionTransformStepFactory>()
+                
+                .AddSingleton<RedundantKeypointEliminator>()
+                .AddSingleton<RedundantKeypointEliminatorTransformStepFactory>()
             ;
 
             services.AddOptionsWithValidateOnStart<ImageReaderOptions>()
                 .Bind(context.Configuration.GetSection(ImageReaderOptions.Section)).ValidateDataAnnotations();
             services.AddOptionsWithValidateOnStart<DeWarpOptions>()
                 .Bind(context.Configuration.GetSection(DeWarpOptions.Section)).ValidateDataAnnotations();
+            services.AddOptionsWithValidateOnStart<KeypointDetectionOptions>()
+                .Bind(context.Configuration.GetSection(KeypointDetectionOptions.Section)).ValidateDataAnnotations();
         })
         .Build();
 
@@ -94,33 +103,6 @@ public class Program
         // Console.WriteLine($"Elapsed: {sw.Elapsed}");
     }
 
-    // public static void TestKeypointDetection(LocalImageReader imageReader, Matrix<Rgba> inputImage)
-    // {
-    //     var swNoIo = new Stopwatch();
-    //     swNoIo.Start();
-    //
-    //     var keypointDetector = new KeypointDetection(0.5f, 50, 256);
-    //
-    //     var initializeTime = swNoIo.Elapsed;
-    //     swNoIo.Restart();
-    //
-    //     // TODO note this conversion ignores `a`
-    //     var bwImage = inputImage.Convert(Grayscale.FromRgba);
-    //     var keypoints = keypointDetector.Detect(bwImage);
-    //     // TODO there are better ways to store these points. Maybe with spatial hashing?
-    //
-    //     Console.WriteLine($"Elapsed while detecting keypoints: Initialize: {initializeTime}, Detecting: {swNoIo.Elapsed}");
-    //     Console.WriteLine($"Found: {keypoints.Count} key points");
-    //
-    //     foreach (var keypoint in keypoints)
-    //     {
-    //         inputImage.DrawSquare(keypoint.Coordinate.X, keypoint.Coordinate.Y,
-    //             5, new Rgba { A = 127, B = 255, G = 0, R = 0 });
-    //     }
-    //
-    //     // TODO probably change the name of this image reader...
-    //     imageReader.WriteImageToDirectory(inputImage, "dotnet_keypoints");
-    // }
     //
     // public static void TestRedundantKeypointElimination(LocalImageReader imageReader, Matrix<Rgba> inputImage)
     // {

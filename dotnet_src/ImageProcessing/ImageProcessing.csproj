@@ -8,13 +8,21 @@
 
     <ItemGroup>
       <ProjectReference Include="..\ImageProcessing.Abstractions\ImageProcessing.Abstractions.csproj" />
+      <ProjectReference Include="..\ImageReader.LocalImageReader\ImageReader.LocalImageReader.csproj" />
       <ProjectReference Include="..\Images.Abstractions\Images.Abstractions.csproj" />
+      <ProjectReference Include="..\Math\LinearAlgebra\LinearAlgebra.csproj" />
     </ItemGroup>
 
     <ItemGroup>
       <PackageReference Include="MathNet.Numerics" Version="5.0.0" />
-      <PackageReference Include="Microsoft.Extensions.Options" Version="9.0.4" />
-      <PackageReference Include="ScottPlot" Version="5.0.47" />
+      <PackageReference Include="Microsoft.Extensions.Options" Version="10.0.1" />
+      <PackageReference Include="ScottPlot" Version="5.1.57" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Reference Include="Microsoft.Extensions.Logging.Abstractions">
+        <HintPath>..\..\..\..\.nuget\packages\microsoft.extensions.logging.abstractions\10.0.1\lib\net8.0\Microsoft.Extensions.Logging.Abstractions.dll</HintPath>
+      </Reference>
     </ItemGroup>
 
 </Project>
