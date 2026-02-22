@@ -8,7 +8,7 @@ using PhotogrammetryStore.Abstractions;
 
 namespace PhotogrammetryStore;
 
-public class MetadataStore
+public class MetadataStore	// TODO add iface when appropriate
 {
 	private readonly TimeProvider _timeProvider;
 	private readonly ConcurrentDictionary<Guid, ParentMetadata> _metadataMapping;
@@ -39,25 +39,44 @@ public class MetadataStore
 		return guid;
 	}
 
-	public void SaveRgba64(Guid record, Matrix<Rgba64> matrix) =>
+	public void StoreRgba64(Guid record, Matrix<Rgba64> matrix) =>
 		StoreAndUpdateMetadata(record, MetadataVariant.Rgba64, () => _rgba64Storage.StoreMatrix(matrix));
 
 	public Matrix<Rgba64> FetchRgba64(Guid parent)
 	{
-		var guid = GetGuidIfExists(parent, MetadataVariant.Rgba64);
+		var guid = FetchVariantGuidIfExists(parent, MetadataVariant.Rgba64);
 		return _rgba64Storage.FetchMatrix(guid).Matrix;
 	}
 
-	public void SaveGrayscale(Guid parent, Matrix<Grayscale> matrix) => StoreAndUpdateMetadata(parent,
+	public void StoreDeWarpedRgba64(Guid record, Matrix<Rgba64> matrix) =>
+		StoreAndUpdateMetadata(record, MetadataVariant.DeWarpedRgba64, () => _rgba64Storage.StoreMatrix(matrix));
+
+	public Matrix<Rgba64> FetchDeWarpedRgba64(Guid parent)
+	{
+		var guid = FetchVariantGuidIfExists(parent, MetadataVariant.DeWarpedRgba64);
+		return _rgba64Storage.FetchMatrix(guid).Matrix;
+	}
+	
+	public void StoreGrayscale(Guid parent, Matrix<Grayscale> matrix) => StoreAndUpdateMetadata(parent,
 		MetadataVariant.Greyscale, () => _grayscaleStorage.StoreMatrix(matrix));
 
 	public Matrix<Grayscale> FetchGrayscale(Guid parent)
 	{
-		var guid = GetGuidIfExists(parent, MetadataVariant.Rgba64);
+		// TODO is there a way these can be combined between dewarped and regular variants?
+		var guid = FetchVariantGuidIfExists(parent, MetadataVariant.Greyscale);
+		return _grayscaleStorage.FetchMatrix(guid).Matrix;
+	}
+	
+	public void StoreDeWarpedGrayscale(Guid parent, Matrix<Grayscale> matrix) => StoreAndUpdateMetadata(parent,
+		MetadataVariant.DeWarpedGrayscale, () => _grayscaleStorage.StoreMatrix(matrix));
+
+	public Matrix<Grayscale> FetchDeWarpedGrayscale(Guid parent)
+	{
+		var guid = FetchVariantGuidIfExists(parent, MetadataVariant.DeWarpedGrayscale);
 		return _grayscaleStorage.FetchMatrix(guid).Matrix;
 	}
 
-	public void SaveKeypoints(Guid parent, List<Keypoint> keypoints) => StoreAndUpdateMetadata(parent,
+	public void StoreKeypoints(Guid parent, List<Keypoint> keypoints) => StoreAndUpdateMetadata(parent,
 		MetadataVariant.Keypoints, () =>
 		{
 			var guid = Guid.NewGuid();
@@ -67,7 +86,7 @@ public class MetadataStore
 
 	public List<Keypoint> FetchKeypoint(Guid parent)
 	{
-		var guid = GetGuidIfExists(parent, MetadataVariant.Keypoints);
+		var guid = FetchVariantGuidIfExists(parent, MetadataVariant.Keypoints);
 
 		if (!_keypointMappings.TryGetValue(guid, out var keypoints))
 		{
@@ -94,7 +113,7 @@ public class MetadataStore
 		_metadataMapping[record] = parentMetadata;
 	}
 
-	private Guid GetGuidIfExists(Guid record, MetadataVariant variant)
+	private Guid FetchVariantGuidIfExists(Guid record, MetadataVariant variant)
 	{
 		if (!_metadataMapping.TryGetValue(record, out var mappings))
 		{

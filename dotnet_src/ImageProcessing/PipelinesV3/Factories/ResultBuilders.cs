@@ -2,19 +2,22 @@ using System.Threading.Tasks.Dataflow;
 using ImageProcessing.PipelinesV3.DTOs;
 using Images.Abstractions.Pixels;
 using LinearAlgebra;
+using PhotogrammetryStore;
 
 namespace ImageProcessing.PipelinesV3.Factories;
 
 public static class ResultBuilders
 {
-    public static TransformBlock<DetectedKeypoints, Matrix<Rgba64>> DetectedKeypointDrawerTransformBlock(ushort radius, Rgba64 dataToDraw)
+    public static TransformBlock<MetadataStoreRecord, Matrix<Rgba64>> DetectedKeypointDrawerTransformBlock(MetadataStore metadataStore, ushort radius, Rgba64 dataToDraw)
     {
         // TODO Is making this generic necessary? If it is it's very possible
-        return new TransformBlock<DetectedKeypoints, Matrix<Rgba64>>(keypointDetection =>
+        return new TransformBlock<MetadataStoreRecord, Matrix<Rgba64>>(record =>
         {
-            var keypoints = keypointDetection.Keypoints;
+            // TODO variant selection. See DeWarp for full comment.
+            var keypoints = metadataStore.FetchKeypoint(record.RecordGuid);
+            var rgbaImage = metadataStore.FetchDeWarpedRgba64(record.RecordGuid);
             // TODO make a deep copy method.
-            var resultImage = (Matrix<Rgba64>)keypointDetection.ImagePair.RgbaImage.Convert((_, rgba64) => rgba64);
+            var resultImage = (Matrix<Rgba64>)rgbaImage.Convert((_, rgba64) => rgba64);
 
             foreach (var keypoint in keypoints)
             {

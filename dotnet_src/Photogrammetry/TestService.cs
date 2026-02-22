@@ -4,12 +4,13 @@ using ImageReader.LocalImageReader;
 using Images.Abstractions.Pixels;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using PhotogrammetryStore;
 
 namespace Photogrammetry;
 
 public class TestService : IHostedService
 {
-    private readonly LocalImageReader _imageReader;
+    private readonly MetadataStore _metadataStore;
     private readonly DeWarpTransformStepFactory _deWarpTransformStepFactory;
     private readonly SingleImageReaderTransformStepFactory _imageReaderTransformStepFactory;
     private readonly ImageWriterActionStepFactory _imageWriterActionStepFactory;
@@ -17,14 +18,14 @@ public class TestService : IHostedService
     private readonly ILogger<TestService>? _logger;
 
     public TestService(
-        LocalImageReader imageReader,
+        MetadataStore metadataStore,
         DeWarpTransformStepFactory deWarpTransformStepFactory,
         SingleImageReaderTransformStepFactory imageReaderTransformStepFactory,
         ImageWriterActionStepFactory imageWriterActionStepFactory,
         KeyPointDetectionTransformStepFactory keyPointDetectionTransformStepFactory,
         ILogger<TestService>? logger = null)
     {
-        _imageReader = imageReader;
+        _metadataStore = metadataStore;
         _deWarpTransformStepFactory = deWarpTransformStepFactory;
         _imageReaderTransformStepFactory = imageReaderTransformStepFactory;
         _imageWriterActionStepFactory = imageWriterActionStepFactory;
@@ -47,9 +48,9 @@ public class TestService : IHostedService
         //      in a repeatable manner. i'm also unsure how to handle the settings for these. On restart seems, bad.
         var imageReader = _imageReaderTransformStepFactory.GetAndInitTransformBlock();
         var deWarper = _deWarpTransformStepFactory.GetAndInitTransformBlock();
-        var grayscaleConverter = Converters.GetGrayscaleConverterTransformBlock();
+        var grayscaleConverter = Converters.GetGrayscaleConverterTransformBlock(_metadataStore);
         var keypointDetector = _keyPointDetectionTransformStepFactory.GetAndInitTransformBlock();
-        var keypointDrawer = ResultBuilders.DetectedKeypointDrawerTransformBlock(5,
+        var keypointDrawer = ResultBuilders.DetectedKeypointDrawerTransformBlock(_metadataStore, 5,
             new Rgba64 { A = ushort.MaxValue, R = ushort.MaxValue, B = 0, G = 0 });
         var writer = _imageWriterActionStepFactory.GetAndInitActionBlock();
 
