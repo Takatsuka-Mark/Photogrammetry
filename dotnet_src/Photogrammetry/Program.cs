@@ -49,8 +49,8 @@ public class Program
                 .AddSingleton<KeypointDetection>()
                 .AddSingleton<KeyPointDetectionTransformStepFactory>()
 
-                // .AddSingleton<RedundantKeypointEliminator>()
-                // .AddSingleton<RedundantKeypointEliminatorTransformStepFactory>()
+                .AddSingleton<RedundantKeypointEliminator>()
+                .AddSingleton<RedundantKeypointEliminatorTransformStepFactory>()
                 
                 .AddSingleton<MetadataStore>()
                 .AddSingleton(TimeProvider.System)
@@ -62,6 +62,9 @@ public class Program
                 .Bind(context.Configuration.GetSection(DeWarpOptions.Section)).ValidateDataAnnotations();
             services.AddOptionsWithValidateOnStart<KeypointDetectionOptions>()
                 .Bind(context.Configuration.GetSection(KeypointDetectionOptions.Section)).ValidateDataAnnotations();
+            services.AddOptionsWithValidateOnStart<RedundantKeypointEliminationOptions>()
+                .Bind(context.Configuration.GetSection(RedundantKeypointEliminationOptions.Section))
+                .ValidateDataAnnotations();
         })
         .Build();
 

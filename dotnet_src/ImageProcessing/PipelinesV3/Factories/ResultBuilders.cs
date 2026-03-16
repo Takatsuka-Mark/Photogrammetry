@@ -14,7 +14,7 @@ public static class ResultBuilders
         return new TransformBlock<MetadataStoreRecord, Matrix<Rgba64>>(record =>
         {
             // TODO variant selection. See DeWarp for full comment.
-            var keypoints = metadataStore.FetchKeypoint(record.RecordGuid);
+            var keypoints = metadataStore.FetchDenoisedKeypoints(record.RecordGuid);
             var rgbaImage = metadataStore.FetchDeWarpedRgba64(record.RecordGuid);
             // TODO make a deep copy method.
             var resultImage = (Matrix<Rgba64>)rgbaImage.Convert((_, rgba64) => rgba64);

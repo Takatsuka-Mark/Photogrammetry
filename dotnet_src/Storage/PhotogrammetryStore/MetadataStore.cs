@@ -76,17 +76,29 @@ public class MetadataStore	// TODO add iface when appropriate
 		return _grayscaleStorage.FetchMatrix(guid).Matrix;
 	}
 
-	public void StoreKeypoints(Guid parent, List<Keypoint> keypoints) => StoreAndUpdateMetadata(parent,
-		MetadataVariant.Keypoints, () =>
+	public void StoreKeypoints(Guid parent, List<Keypoint> keypoints) =>
+		StoreKeypoints(parent, keypoints, MetadataVariant.Keypoints);
+	
+	public void StoreDenoisedKeypoints(Guid parent, List<Keypoint> keypoints) =>
+		StoreKeypoints(parent, keypoints, MetadataVariant.DeNoisedKeypoints);
+
+	private void StoreKeypoints(Guid parent, List<Keypoint> keypoints, MetadataVariant variant) => StoreAndUpdateMetadata(parent,
+		variant, () =>
 		{
 			var guid = Guid.NewGuid();
 			_keypointMappings.TryAdd(guid, keypoints);
 			return guid;
 		});
 
-	public List<Keypoint> FetchKeypoint(Guid parent)
+	public List<Keypoint> FetchKeypoints(Guid parent) =>
+		FetchKeypoints(parent, MetadataVariant.Keypoints);
+
+	public List<Keypoint> FetchDenoisedKeypoints(Guid parent) =>
+		FetchKeypoints(parent, MetadataVariant.DeNoisedKeypoints);
+
+	private List<Keypoint> FetchKeypoints(Guid parent, MetadataVariant variant)
 	{
-		var guid = FetchVariantGuidIfExists(parent, MetadataVariant.Keypoints);
+		var guid = FetchVariantGuidIfExists(parent, variant);
 
 		if (!_keypointMappings.TryGetValue(guid, out var keypoints))
 		{
