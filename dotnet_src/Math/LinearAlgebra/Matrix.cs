@@ -75,6 +75,10 @@ public class Matrix<TDataType> : IMatrix<TDataType>
         return _data[x, y];
     }
 
+    public MatrixDimensions GetDimensions() => Dimensions;
+
+    // public MatrixDimensions GetDimensions() => Dimensions;
+
     public TDataType[] GetXs(ushort y)
     {
         AssertYInBounds(y);
@@ -147,6 +151,36 @@ public class Matrix<TDataType> : IMatrix<TDataType>
             for (ushort x = 0; x < Dimensions.Width; x += 1)
             {
                 newMatrix[y, x] = _data[x, y];
+            }
+        }
+
+        return newMatrix;
+    }
+
+    public Matrix<TDataType> JoinRight(IMatrix<TDataType> matrix)
+    {
+        // TODO adjust the return type from Matrix to IMatrix maybe?
+        var incomingDims = matrix.GetDimensions();
+        
+        // TODO move this into some new place.
+        
+        // Note that this truncates any extra matrix components. 
+        var newMatrix = new Matrix<TDataType>(Dimensions with { Width = (ushort)(Dimensions.Width + incomingDims.Width) });
+
+        // TODO could technically just do a map and include the condition but oh well.
+        for (ushort x = 0; x < Dimensions.Width + incomingDims.Width; x += 1)
+        {
+            for (ushort y = 0; y < Dimensions.Height; y += 1)
+            {
+                // TODO one of the worst ways to implement this but it works
+                if (x >= Dimensions.Width)
+                {
+                    newMatrix[x, y] = matrix[(ushort)(x - Dimensions.Width), y];
+                }
+                else
+                {
+                    newMatrix[x, y] = this[x, y];
+                }
             }
         }
 

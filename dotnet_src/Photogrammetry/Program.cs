@@ -52,6 +52,8 @@ public class Program
                 .AddSingleton<RedundantKeypointEliminator>()
                 .AddSingleton<RedundantKeypointEliminatorTransformStepFactory>()
                 
+                .AddSingleton<KeypointMatching>()
+                
                 .AddSingleton<MetadataStore>()
                 .AddSingleton(TimeProvider.System)
             ;

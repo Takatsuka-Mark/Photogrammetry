@@ -7,11 +7,8 @@ namespace ImageProcessing;
 
 public class KeypointMatching
 {
-    private readonly int _hammingThreshold;
-
-    public KeypointMatching(int hammingThreshold)
+    public KeypointMatching()
     {
-        _hammingThreshold = hammingThreshold;
     }
 
     public List<KeypointPair> MatchKeypoints(List<Keypoint> keypoints1, List<Keypoint> keypoints2)

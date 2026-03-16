@@ -8,7 +8,8 @@ namespace ImageProcessing.PipelinesV3.Factories;
 
 public static class ResultBuilders
 {
-    public static TransformBlock<MetadataStoreRecord, Matrix<Rgba64>> DetectedKeypointDrawerTransformBlock(MetadataStore metadataStore, ushort radius, Rgba64 dataToDraw)
+    public static TransformBlock<MetadataStoreRecord, Matrix<Rgba64>> DetectedKeypointDrawerTransformBlock(
+        MetadataStore metadataStore, ushort radius, Rgba64 dataToDraw)
     {
         // TODO Is making this generic necessary? If it is it's very possible
         return new TransformBlock<MetadataStoreRecord, Matrix<Rgba64>>(record =>
@@ -27,7 +28,16 @@ public static class ResultBuilders
             return resultImage;
         });
     }
-    
+
+    public static void DrawSquares<TData>(Matrix<TData> matrix, List<Coordinate> coordinates, ushort radius,
+        TData dataToDraw)
+    {
+        foreach (var coordinate in coordinates)
+        {
+            DrawSquare(matrix, coordinate, radius, dataToDraw);
+        }
+    }
+
     public static void DrawSquare<TData>(Matrix<TData> matrix, Coordinate coordinate, ushort radius, TData dataToDraw)
     {
         for (var u = coordinate.X - radius; u < coordinate.X + radius; u += 1)
@@ -43,39 +53,52 @@ public static class ResultBuilders
             }
         }
     }
-    
-    // public void DrawLine(Coordinate p1, Coordinate p2, TData dataToDraw)
-    // {
-    //     // Using bresehnam's line drawer
-    //     ValidateCoords(p1.X, p1.Y);
-    //     ValidateCoords(p2.X, p2.Y);
-    //
-    //     var dx = Math.Abs(p2.X - p1.X);
-    //     var dy = Math.Abs(p2.Y - p1.Y);
-    //     var sx = p1.X < p2.X ? 1 : -1;
-    //     var sy = p1.Y < p2.Y ? 1 : -1;
-    //     var err = dx - dy;
-    //
-    //     var x = p1.X;
-    //     var y = p1.Y;
-    //
-    //     // TODO Kinda scary to have a while(true)
-    //     while (true){
-    //         _storage.SetOrDoNothing(x, y, dataToDraw);
-    //
-    //         if (x == p2.X && y == p2.Y)
-    //             break;
-    //
-    //         var err2 = 2 * err;
-    //
-    //         if (err2 >= -dy){
-    //             err -= dy;
-    //             x += sx;
-    //         }
-    //         if (err2 <= dx){
-    //             err += dx;
-    //             y += sy;
-    //         }
-    //     }
-    // }
+
+    public static void DrawLines<TData>(Matrix<TData> matrix, List<(Coordinate p1, Coordinate p2)> coordinatePairs,
+        TData dataToDraw)
+    {
+        foreach (var coordinatePair in coordinatePairs)
+        {
+            DrawLine(matrix, coordinatePair.p1, coordinatePair.p2, dataToDraw);
+        }
+    }
+
+    public static void DrawLine<TData>(Matrix<TData> matrix, Coordinate p1, Coordinate p2, TData dataToDraw)
+    {
+        // Using bresehnam's line drawer
+        matrix.InBounds(p1.X, p1.Y);
+        matrix.InBounds(p2.X, p2.Y);
+
+        var dx = Math.Abs(p2.X - p1.X);
+        var dy = Math.Abs(p2.Y - p1.Y);
+        var sx = p1.X < p2.X ? 1 : -1;
+        var sy = p1.Y < p2.Y ? 1 : -1;
+        var err = dx - dy;
+
+        var x = p1.X;
+        var y = p1.Y;
+
+        // TODO Kinda scary to have a while(true)
+        while (true)
+        {
+            matrix[(ushort)x, (ushort)y] = dataToDraw;
+
+            if (x == p2.X && y == p2.Y)
+                break;
+
+            var err2 = 2 * err;
+
+            if (err2 >= -dy)
+            {
+                err -= dy;
+                x += sx;
+            }
+
+            if (err2 <= dx)
+            {
+                err += dx;
+                y += sy;
+            }
+        }
+    }
 }
