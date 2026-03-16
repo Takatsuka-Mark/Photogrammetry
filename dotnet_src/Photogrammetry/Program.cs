@@ -12,6 +12,7 @@ using MathNet.Numerics.Statistics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using PhotogrammetryStore;
 using ScottPlot;
 using SixLabors.ImageSharp;
 
@@ -47,9 +48,14 @@ public class Program
                 // TODO should probably make this generic so that I can give any keypoint detector (IKeypointDetector and make the factory take I_)
                 .AddSingleton<KeypointDetection>()
                 .AddSingleton<KeyPointDetectionTransformStepFactory>()
-                
+
                 .AddSingleton<RedundantKeypointEliminator>()
                 .AddSingleton<RedundantKeypointEliminatorTransformStepFactory>()
+                
+                .AddSingleton<KeypointMatching>()
+                
+                .AddSingleton<MetadataStore>()
+                .AddSingleton(TimeProvider.System)
             ;
 
             services.AddOptionsWithValidateOnStart<ImageReaderOptions>()
@@ -58,6 +64,9 @@ public class Program
                 .Bind(context.Configuration.GetSection(DeWarpOptions.Section)).ValidateDataAnnotations();
             services.AddOptionsWithValidateOnStart<KeypointDetectionOptions>()
                 .Bind(context.Configuration.GetSection(KeypointDetectionOptions.Section)).ValidateDataAnnotations();
+            services.AddOptionsWithValidateOnStart<RedundantKeypointEliminationOptions>()
+                .Bind(context.Configuration.GetSection(RedundantKeypointEliminationOptions.Section))
+                .ValidateDataAnnotations();
         })
         .Build();
 

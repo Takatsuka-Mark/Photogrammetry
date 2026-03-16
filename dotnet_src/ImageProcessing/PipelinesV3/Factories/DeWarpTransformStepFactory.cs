@@ -1,18 +1,22 @@
 using System.Threading.Tasks.Dataflow;
 using ImageProcessing.Abstractions.PipelinesV3;
+using ImageProcessing.PipelinesV3.DTOs;
 using Images.Abstractions.Pixels;
 using LinearAlgebra;
 using Microsoft.Extensions.Logging;
+using PhotogrammetryStore;
 
 namespace ImageProcessing.PipelinesV3.Factories;
 
-public class DeWarpTransformStepFactory : ITransformStepFactory<Matrix<Rgba64>, Matrix<Rgba64>>
+public class DeWarpTransformStepFactory : ITransformStepFactory<MetadataStoreRecord, MetadataStoreRecord>
 {
+    private readonly MetadataStore _metadataStore;
     private readonly ILogger<DeWarpTransformStepFactory>? _logger;
     private readonly Lazy<Matrix<Uv>> _distortionMatrix;
 
-    public DeWarpTransformStepFactory(DeWarp deWarp, ILogger<DeWarpTransformStepFactory>? logger = null)
+    public DeWarpTransformStepFactory(MetadataStore metadataStore, DeWarp deWarp, ILogger<DeWarpTransformStepFactory>? logger = null)
     {
+        _metadataStore = metadataStore;
         _logger = logger;
         // TODO should possibly have some way to change configuration live.
 
@@ -32,20 +36,28 @@ public class DeWarpTransformStepFactory : ITransformStepFactory<Matrix<Rgba64>, 
         }
     }
 
-    public TransformBlock<Matrix<Rgba64>, Matrix<Rgba64>> GetTransformBlock()
+    public TransformBlock<MetadataStoreRecord, MetadataStoreRecord> GetTransformBlock()
     {
         // TODO OOPness of this is kinda weird.
-        return new TransformBlock<Matrix<Rgba64>, Matrix<Rgba64>>(inputMatrix =>
-        {
-            // TODO log category. also downgrade to debug
-            _logger?.LogInformation("Dewarping image");
-            return DeWarp.ApplyDistortionMat(inputMatrix, _distortionMatrix.Value);
-        });
+        return new TransformBlock<MetadataStoreRecord, MetadataStoreRecord>(DeWarpRecord);
     }
 
-    public TransformBlock<Matrix<Rgba64>, Matrix<Rgba64>> GetAndInitTransformBlock()
+    public TransformBlock<MetadataStoreRecord, MetadataStoreRecord> GetAndInitTransformBlock()
     {
         Initialize();
         return GetTransformBlock();
+    }
+
+    private MetadataStoreRecord DeWarpRecord(MetadataStoreRecord record)
+    {
+        // TODO log category. also downgrade to debug
+        // TODO determine how we can make this know which variant it should be pulling.
+        // TODO could have some sense of tags that translate into all downstream variants. Like ("dewarped").
+        _logger?.LogInformation("Dewarping image");
+
+        var inputMatrix = _metadataStore.FetchRgba64(record.RecordGuid);
+        var result = DeWarp.ApplyDistortionMat(inputMatrix, _distortionMatrix.Value);
+        _metadataStore.StoreDeWarpedRgba64(record.RecordGuid, result);
+        return record;
     }
 }

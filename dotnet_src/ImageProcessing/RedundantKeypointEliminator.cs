@@ -1,4 +1,6 @@
 using ImageProcessing.Abstractions;
+using ImageProcessing.Options;
+using Microsoft.Extensions.Options;
 
 namespace ImageProcessing;
 
@@ -6,9 +8,9 @@ public class RedundantKeypointEliminator
 {
     private readonly int _suppressionRadius;
 
-    public RedundantKeypointEliminator(int suppressionRadius)
+    public RedundantKeypointEliminator(IOptions<RedundantKeypointEliminationOptions> options)
     {
-        _suppressionRadius = suppressionRadius;
+        _suppressionRadius = options.Value.SuppressionRadius;
     }
 
     public List<Keypoint> EliminateRedundantKeypoints(List<Keypoint> keypoints)

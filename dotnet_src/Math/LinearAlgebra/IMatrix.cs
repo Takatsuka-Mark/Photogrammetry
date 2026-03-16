@@ -6,6 +6,7 @@ public interface IMatrix<TDataType>
     public TDataType this[ushort xIds, ushort yIdx] { get; set; }
     public void Set(ushort xIdx, ushort yIdx, TDataType data);
     public TDataType Get(ushort xIdx, ushort yIdx);
+    public MatrixDimensions GetDimensions();
 
     // TODO change list return types?
     public TDataType[] GetYs(ushort yIdx);
